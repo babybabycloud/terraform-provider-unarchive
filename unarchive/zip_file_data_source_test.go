@@ -1,6 +1,7 @@
 package unarchive
 
 import (
+	"context"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -10,18 +11,44 @@ import (
 
 func TestExtract(t *testing.T) {
 
+	// includes, _ := types.ListValue(types.StringType, []attr.Value{
+	// 	types.StringValue("src"),
+	// })
+	// excludes, _ := types.ListValue(types.StringType, []attr.Value{
+	// 	types.StringValue("test"),
+	// })
+	model := zipFileDataSourceModel{
+		FileName: types.StringValue("master.zip"),
+		// Includes: includes,
+		// Excludes: excludes,
+	}
+
+	_, err := model.extract(context.TODO())
+	assert.Empty(t, err)
+}
+
+func TestIncludeFilter(t *testing.T) {
 	includes, _ := types.ListValue(types.StringType, []attr.Value{
-		types.StringValue("src"),
-	})
-	excludes, _ := types.ListValue(types.StringType, []attr.Value{
-		types.StringValue("test"),
+		types.StringValue("Makefile"),
 	})
 	model := zipFileDataSourceModel{
 		FileName: types.StringValue("master.zip"),
 		Includes: includes,
+	}
+
+	_, err := model.extract(context.TODO())
+	assert.Empty(t, err)
+}
+
+func TestExcludeFilter(t *testing.T) {
+	excludes, _ := types.ListValue(types.StringType, []attr.Value{
+		types.StringValue("src"),
+	})
+	model := zipFileDataSourceModel{
+		FileName: types.StringValue("master.zip"),
 		Excludes: excludes,
 	}
 
-	_, err := model.extract()
+	_, err := model.extract(context.TODO())
 	assert.Empty(t, err)
 }

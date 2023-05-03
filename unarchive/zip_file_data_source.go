@@ -3,6 +3,7 @@ package unarchive
 import (
 	"archive/zip"
 	"context"
+	"fmt"
 	"io"
 	"os"
 	"path"
@@ -12,6 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
 const DEFAULT_DIR_MODE = 0740
@@ -19,7 +21,6 @@ const DEFAULT_DIR_MODE = 0740
 // Ensure the implementation satisfies the expected interfaces.
 var (
 	_ datasource.DataSource = &zipFileDataSource{}
-	// _ datasource.DataSourceWithConfigure = &zipFileDataSource{}
 )
 
 // NewCoffeesDataSource is a helper function to simplify the provider implementation.
@@ -142,44 +143,8 @@ func (z zipFileDataSourceModel) extract(ctx context.Context) (string, error) {
 
 	ch := filesInSliceToChan(rc.File)
 
-	// Include
-	ch = filter(ch, func(filename string) bool {
-		if z.Includes.IsNull() || z.Includes.IsUnknown() {
-			return true
-		}
-		includePatterns := make([]types.String, len(z.Includes.Elements()))
-		z.Includes.ElementsAs(ctx, &includePatterns, false)
-		for _, value := range includePatterns {
-			matched, err := regexp.MatchString(value.ValueString(), filename)
-			if err != nil {
-				// TODO add log
-			}
-			if matched {
-				return true
-			}
-		}
-		return false
-	})
-
-	// Exclude
-	ch = filter(ch, func(filename string) bool {
-		if z.Excludes.IsNull() || z.Excludes.IsUnknown() {
-			return true
-		}
-		excludePatterns := make([]types.String, len(z.Excludes.Elements()))
-		z.Excludes.ElementsAs(ctx, &excludePatterns, false)
-		for _, value := range excludePatterns {
-			matched, err := regexp.MatchString(value.ValueString(), filename)
-
-			if err != nil {
-				// TODO add log
-			}
-			if matched {
-				return false
-			}
-		}
-		return true
-	})
+	ch = filter(ch, z.patterns(z.Includes), doesNameMatchPatterns)
+	ch = filter(ch, z.patterns(z.Excludes), doesNotNameMatchPatterns)
 
 	for file := range ch {
 		err = z.copyFile(file)
@@ -188,6 +153,18 @@ func (z zipFileDataSourceModel) extract(ctx context.Context) (string, error) {
 		}
 	}
 	return "", nil
+}
+
+func (z zipFileDataSourceModel) patterns(list types.List) []string {
+	var p []string
+	if !list.IsNull() && !list.IsUnknown() {
+		patterns := make([]types.String, len(list.Elements()))
+		p = make([]string, len(list.Elements()))
+		for index, value := range patterns {
+			p[index] = value.ValueString()
+		}
+	}
+	return p
 }
 
 func filesInSliceToChan(files []*zip.File) <-chan *zip.File {
@@ -202,16 +179,33 @@ func filesInSliceToChan(files []*zip.File) <-chan *zip.File {
 	return ch
 }
 
-func filter(ch <-chan *zip.File, test func(filename string) bool) <-chan *zip.File {
+func filter(ch <-chan *zip.File, patterns []string, test func(filename string, patterns []string) bool) <-chan *zip.File {
 	outCh := make(chan *zip.File)
 	go func() {
 		defer close(outCh)
 		for file := range ch {
-			matched := test(file.Name)
+			matched := test(file.Name, patterns)
 			if matched {
 				outCh <- file
 			}
 		}
 	}()
 	return outCh
+}
+
+func doesNameMatchPatterns(name string, patterns []string) bool {
+	for _, value := range patterns {
+		matched, err := regexp.MatchString(value, name)
+		if err != nil {
+			tflog.Warn(context.Background(), fmt.Sprintf("%s. Ignore it", err.Error()))
+		}
+		if matched {
+			return true
+		}
+	}
+	return false
+}
+
+func doesNotNameMatchPatterns(name string, patterns []string) bool {
+	return !doesNameMatchPatterns(name, patterns)
 }
