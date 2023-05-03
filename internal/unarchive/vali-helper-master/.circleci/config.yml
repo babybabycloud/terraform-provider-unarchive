@@ -1,0 +1,68 @@
+version: 2.1
+
+executors:
+  python:
+    docker:
+      - image: cimg/python:3.11.2
+        auth:
+          username: babybabycloud
+          password: $DOCKER_HUB_TOKEN
+    resource_class: small
+
+parameters:
+  store_dir:
+    type: string
+    default: "./"
+
+jobs:
+  Check:
+    executor: python
+    steps:
+      - checkout
+      - run:
+          name: Check UT, Coverage, Lint and Type
+          command: |
+            make check
+          environment:
+            # whatever the environment variable PYTEST_JUNIT_REPORT is, the junit report will be put in the directory
+            # junit
+            PYTEST_JUNIT_REPORT: 1
+      - store_test_results:
+          path: junit
+      - persist_to_workspace:
+          root: << pipeline.parameters.store_dir >>
+          paths:
+            - dist
+            - Makefile
+  Publish:
+    executor: python
+    steps:
+      - when:
+          condition: << pipeline.git.tag >>
+          steps:
+            - attach_workspace:
+                at: << pipeline.parameters.store_dir >>
+            - run:
+                name: Publish to PYPI
+                command: |
+                  make upload
+      - run: echo Finish
+
+
+workflows:
+  Publish-Workflow:
+    jobs:
+      - Check:
+          context:
+            - vali
+          filters:
+            tags:
+              only: /release-.*/
+      - Publish:
+          context:
+            - vali
+          filters:
+            tags:
+              only: /release-.*/
+          requires:
+            - Check

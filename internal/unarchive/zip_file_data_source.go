@@ -3,17 +3,14 @@ package unarchive
 import (
 	"archive/zip"
 	"context"
-	"fmt"
 	"io"
 	"os"
 	"path"
 	"path/filepath"
-	"regexp"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
 const DEFAULT_DIR_MODE = 0740
@@ -80,10 +77,7 @@ func (d *zipFileDataSource) Read(ctx context.Context, req datasource.ReadRequest
 }
 
 type zipFileDataSourceModel struct {
-	FileName types.String `tfsdk:"file_name"`
-	Output   types.String `tfsdk:"output"`
-	Includes types.List   `tfsdk:"includes"`
-	Excludes types.List   `tfsdk:"excludes"`
+	config
 }
 
 func (z zipFileDataSourceModel) copyFile(file *zip.File) error {
@@ -121,18 +115,6 @@ func (z zipFileDataSourceModel) copyFile(file *zip.File) error {
 	return nil
 }
 
-func (z zipFileDataSourceModel) decideOutputDir() string {
-	outputDir, err := os.Getwd()
-	if err != nil {
-		outputDir = "./"
-	}
-
-	if !z.Output.IsNull() && !z.Output.IsUnknown() {
-		outputDir = z.Output.ValueString()
-	}
-	return outputDir
-}
-
 func (z zipFileDataSourceModel) extract(ctx context.Context) (string, error) {
 	zipFile := z.FileName.ValueString()
 	rc, err := zip.OpenReader(zipFile)
@@ -143,8 +125,8 @@ func (z zipFileDataSourceModel) extract(ctx context.Context) (string, error) {
 
 	ch := filesInSliceToChan(rc.File)
 
-	ch = filter(ch, z.patterns(z.Includes), doesNameMatchPatterns)
-	ch = filter(ch, z.patterns(z.Excludes), doesNotNameMatchPatterns)
+	ch = filter(ch, z.toPatterns(z.Includes).doesNameMatchPatterns)
+	ch = filter(ch, z.toPatterns(z.Excludes).doesNotNameMatchPatterns)
 
 	for file := range ch {
 		err = z.copyFile(file)
@@ -153,18 +135,6 @@ func (z zipFileDataSourceModel) extract(ctx context.Context) (string, error) {
 		}
 	}
 	return "", nil
-}
-
-func (z zipFileDataSourceModel) patterns(list types.List) []string {
-	var p []string
-	if !list.IsNull() && !list.IsUnknown() {
-		patterns := make([]types.String, len(list.Elements()))
-		p = make([]string, len(list.Elements()))
-		for index, value := range patterns {
-			p[index] = value.ValueString()
-		}
-	}
-	return p
 }
 
 func filesInSliceToChan(files []*zip.File) <-chan *zip.File {
@@ -179,33 +149,16 @@ func filesInSliceToChan(files []*zip.File) <-chan *zip.File {
 	return ch
 }
 
-func filter(ch <-chan *zip.File, patterns []string, test func(filename string, patterns []string) bool) <-chan *zip.File {
+func filter(ch <-chan *zip.File, test func(filename string) bool) <-chan *zip.File {
 	outCh := make(chan *zip.File)
 	go func() {
 		defer close(outCh)
 		for file := range ch {
-			matched := test(file.Name, patterns)
+			matched := test(file.Name)
 			if matched {
 				outCh <- file
 			}
 		}
 	}()
 	return outCh
-}
-
-func doesNameMatchPatterns(name string, patterns []string) bool {
-	for _, value := range patterns {
-		matched, err := regexp.MatchString(value, name)
-		if err != nil {
-			tflog.Warn(context.Background(), fmt.Sprintf("%s. Ignore it", err.Error()))
-		}
-		if matched {
-			return true
-		}
-	}
-	return false
-}
-
-func doesNotNameMatchPatterns(name string, patterns []string) bool {
-	return !doesNameMatchPatterns(name, patterns)
 }

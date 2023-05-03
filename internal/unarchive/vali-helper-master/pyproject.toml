@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools==65.5.0", "setuptools_scm[toml]==7.1.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vali_helper"
+description = "vali-helper is a util to help define the value checker on a function."
+readme = "README.md"
+license = {file = "LICENSE"}
+authors = [
+    {name = "babybabycloud", email = "babybabycloud2020@gmail.com"},
+]
+keywords = ["validation"]
+classifiers = [
+    "Programming Language :: Python"
+]
+dynamic = ["version"]
+
+[project.urls]
+homepage = "https://github.com/babybabycloud/vali-helper"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+exclude = ["test"]
+namespaces = false
+
+[tool.setuptools_scm]
+write_to = "src/vali/_version.py"
