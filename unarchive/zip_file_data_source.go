@@ -7,6 +7,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"regexp"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -68,9 +69,9 @@ func (d *zipFileDataSource) Read(ctx context.Context, req datasource.ReadRequest
 		return
 	}
 
-	err := config.extract()
+	msg, err := config.extract(ctx)
 	if err != nil {
-		resp.Diagnostics.AddError("Error occurred when extract files!", err.Error())
+		resp.Diagnostics.AddError(msg, err.Error())
 		return
 	}
 
@@ -84,28 +85,11 @@ type zipFileDataSourceModel struct {
 	Excludes types.List   `tfsdk:"excludes"`
 }
 
-func (z zipFileDataSourceModel) extract() error {
-	reader, err := zip.OpenReader(z.FileName.ValueString())
-	if err != nil {
-		return err
-	}
-	defer reader.Close()
-
-	for _, file := range reader.File {
-		err = z.copyFile(file)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
 func (z zipFileDataSourceModel) copyFile(file *zip.File) error {
 	outputDir := z.decideOutputDir()
 	err := os.MkdirAll(outputDir, DEFAULT_DIR_MODE)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	if file.Method == zip.Store {
@@ -118,12 +102,12 @@ func (z zipFileDataSourceModel) copyFile(file *zip.File) error {
 	}
 	defer rc.Close()
 
-	err = os.MkdirAll(outputDir+string(filepath.Separator)+path.Dir(file.Name), DEFAULT_DIR_MODE)
+	err = os.MkdirAll(path.Join(outputDir, string(filepath.Separator), path.Dir(file.Name)), DEFAULT_DIR_MODE)
 	if err != nil {
 		return err
 	}
 
-	cf, err := os.Create(outputDir + string(filepath.Separator) + file.Name)
+	cf, err := os.Create(path.Join(outputDir, string(filepath.Separator), file.Name))
 	if err != nil {
 		return err
 	}
@@ -146,4 +130,88 @@ func (z zipFileDataSourceModel) decideOutputDir() string {
 		outputDir = z.Output.ValueString()
 	}
 	return outputDir
+}
+
+func (z zipFileDataSourceModel) extract(ctx context.Context) (string, error) {
+	zipFile := z.FileName.ValueString()
+	rc, err := zip.OpenReader(zipFile)
+	if err != nil {
+		return "Error occured when open zip file", err
+	}
+	defer rc.Close()
+
+	ch := filesInSliceToChan(rc.File)
+
+	// Include
+	ch = filter(ch, func(filename string) bool {
+		if z.Includes.IsNull() || z.Includes.IsUnknown() {
+			return true
+		}
+		includePatterns := make([]types.String, len(z.Includes.Elements()))
+		z.Includes.ElementsAs(ctx, &includePatterns, false)
+		for _, value := range includePatterns {
+			matched, err := regexp.MatchString(value.ValueString(), filename)
+			if err != nil {
+				// TODO add log
+			}
+			if matched {
+				return true
+			}
+		}
+		return false
+	})
+
+	// Exclude
+	ch = filter(ch, func(filename string) bool {
+		if z.Excludes.IsNull() || z.Excludes.IsUnknown() {
+			return true
+		}
+		excludePatterns := make([]types.String, len(z.Excludes.Elements()))
+		z.Excludes.ElementsAs(ctx, &excludePatterns, false)
+		for _, value := range excludePatterns {
+			matched, err := regexp.MatchString(value.ValueString(), filename)
+
+			if err != nil {
+				// TODO add log
+			}
+			if matched {
+				return false
+			}
+		}
+		return true
+	})
+
+	for file := range ch {
+		err = z.copyFile(file)
+		if err != nil {
+			return "Error occured when copy file", err
+		}
+	}
+	return "", nil
+}
+
+func filesInSliceToChan(files []*zip.File) <-chan *zip.File {
+	ch := make(chan *zip.File)
+	go func() {
+		defer close(ch)
+
+		for _, file := range files {
+			ch <- file
+		}
+	}()
+	return ch
+}
+
+func filter(ch <-chan *zip.File, test func(filename string) bool) <-chan *zip.File {
+	outCh := make(chan *zip.File)
+	go func() {
+		defer close(outCh)
+		for file := range ch {
+			matched := test(file.Name)
+			if matched {
+				outCh <- file
+			}
+		}
+	}()
+	return outCh
 }
