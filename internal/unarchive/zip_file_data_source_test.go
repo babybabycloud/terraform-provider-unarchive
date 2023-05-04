@@ -11,9 +11,7 @@ import (
 
 func TestExtract(t *testing.T) {
 	model := zipFileDataSourceModel{
-		config: config{
-			FileName: types.StringValue("master.zip"),
-		},
+		FileName: types.StringValue("master.zip"),
 	}
 	_, err := model.extract(context.TODO())
 	assert.Empty(t, err)
@@ -24,10 +22,8 @@ func TestIncludeFilter(t *testing.T) {
 		types.StringValue("Makefile"),
 	})
 	model := zipFileDataSourceModel{
-		config: config{
-			FileName: types.StringValue("master.zip"),
-			Includes: includes,
-		},
+		FileName: types.StringValue("master.zip"),
+		Includes: includes,
 	}
 
 	_, err := model.extract(context.TODO())
@@ -39,10 +35,8 @@ func TestExcludeFilter(t *testing.T) {
 		types.StringValue("src"),
 	})
 	model := zipFileDataSourceModel{
-		config: config{
-			FileName: types.StringValue("master.zip"),
-			Excludes: excludes,
-		},
+		FileName: types.StringValue("master.zip"),
+		Excludes: excludes,
 	}
 
 	_, err := model.extract(context.TODO())

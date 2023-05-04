@@ -6,7 +6,6 @@ import (
 	"io"
 	"os"
 	"path"
-	"path/filepath"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -51,6 +50,9 @@ func (d *zipFileDataSource) Schema(_ context.Context, _ datasource.SchemaRequest
 				ElementType: types.StringType,
 				Optional:    true,
 			},
+			"flat": schema.BoolAttribute{
+				Optional: true,
+			},
 		},
 	}
 }
@@ -58,7 +60,6 @@ func (d *zipFileDataSource) Schema(_ context.Context, _ datasource.SchemaRequest
 // Read refreshes the Terraform state with the latest data.
 func (d *zipFileDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var config zipFileDataSourceModel
-
 	diag := req.Config.Get(ctx, &config)
 	if diag.HasError() {
 		for _, diagnotic := range diag.Errors() {
@@ -77,7 +78,11 @@ func (d *zipFileDataSource) Read(ctx context.Context, req datasource.ReadRequest
 }
 
 type zipFileDataSourceModel struct {
-	config
+	FileName types.String `tfsdk:"file_name"`
+	Output   types.String `tfsdk:"output"`
+	Includes types.List   `tfsdk:"includes"`
+	Excludes types.List   `tfsdk:"excludes"`
+	Flat     types.Bool   `tfsdk:"flat"`
 }
 
 func (z zipFileDataSourceModel) copyFile(file *zip.File) error {
@@ -97,12 +102,15 @@ func (z zipFileDataSourceModel) copyFile(file *zip.File) error {
 	}
 	defer rc.Close()
 
-	err = os.MkdirAll(path.Join(outputDir, string(filepath.Separator), path.Dir(file.Name)), DEFAULT_DIR_MODE)
+	isFlat := !z.Flat.IsNull() && z.Flat.ValueBool()
+	filename := absoluteFileName(outputDir, file.Name, isFlat)
+
+	err = os.MkdirAll(path.Dir(filename), DEFAULT_DIR_MODE)
 	if err != nil {
 		return err
 	}
 
-	cf, err := os.Create(path.Join(outputDir, string(filepath.Separator), file.Name))
+	cf, err := os.Create(filename)
 	if err != nil {
 		return err
 	}
@@ -125,10 +133,11 @@ func (z zipFileDataSourceModel) extract(ctx context.Context) (string, error) {
 
 	ch := filesInSliceToChan(rc.File)
 
-	ch = filter(ch, z.toPatterns(z.Includes).doesNameMatchPatterns)
-	ch = filter(ch, z.toPatterns(z.Excludes).doesNotNameMatchPatterns)
+	ch = filter(ch, toPatterns(z.Includes).doesNameMatchPatterns)
+	ch = filter(ch, toPatterns(z.Excludes).doesNotNameMatchPatterns)
 
 	for file := range ch {
+
 		err = z.copyFile(file)
 		if err != nil {
 			return "Error occured when copy file", err
@@ -161,4 +170,13 @@ func filter(ch <-chan *zip.File, test func(filename string) bool) <-chan *zip.Fi
 		}
 	}()
 	return outCh
+}
+
+func absoluteFileName(outDir, filename string, isFlat bool) string {
+	if isFlat {
+		filename = path.Join(outDir, path.Base(filename))
+	} else {
+		filename = path.Join(outDir, filename)
+	}
+	return filename
 }
