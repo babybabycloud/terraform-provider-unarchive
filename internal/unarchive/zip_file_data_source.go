@@ -7,6 +7,7 @@ import (
 	"os"
 	"path"
 
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -19,7 +20,7 @@ var (
 	_ datasource.DataSource = &zipFileDataSource{}
 )
 
-// NewCoffeesDataSource is a helper function to simplify the provider implementation.
+// NewZipFileDataSource is a helper function to simplify the provider implementation.
 func NewZipFileDataSource() datasource.DataSource {
 	return &zipFileDataSource{}
 }
@@ -53,6 +54,10 @@ func (d *zipFileDataSource) Schema(_ context.Context, _ datasource.SchemaRequest
 			"flat": schema.BoolAttribute{
 				Optional: true,
 			},
+			"file_names": schema.ListAttribute{
+				ElementType: types.StringType,
+				Computed:    true,
+			},
 		},
 	}
 }
@@ -68,66 +73,73 @@ func (d *zipFileDataSource) Read(ctx context.Context, req datasource.ReadRequest
 		return
 	}
 
-	msg, err := config.extract(ctx)
-	if err != nil {
-		resp.Diagnostics.AddError(msg, err.Error())
+	info := config.extract(ctx)
+	if info.err != nil {
+		resp.Diagnostics.AddError(info.msg, info.err.Error())
 		return
 	}
 
+	config.addFileNames(info.filenames)
 	resp.State.Set(ctx, &config)
 }
 
 type zipFileDataSourceModel struct {
-	FileName types.String `tfsdk:"file_name"`
-	Output   types.String `tfsdk:"output"`
-	Includes types.List   `tfsdk:"includes"`
-	Excludes types.List   `tfsdk:"excludes"`
-	Flat     types.Bool   `tfsdk:"flat"`
+	FileName  types.String `tfsdk:"file_name"`
+	Output    types.String `tfsdk:"output"`
+	Includes  types.List   `tfsdk:"includes"`
+	Excludes  types.List   `tfsdk:"excludes"`
+	Flat      types.Bool   `tfsdk:"flat"`
+	FileNames types.List   `tfsdk:"file_names"`
 }
 
-func (z zipFileDataSourceModel) copyFile(file *zip.File) error {
+func (z zipFileDataSourceModel) copyFile(file *zip.File) (string, error) {
 	outputDir := z.decideOutputDir()
 	err := os.MkdirAll(outputDir, DEFAULT_DIR_MODE)
 	if err != nil {
-		return err
+		return "", err
 	}
-
-	if file.Method == zip.Store {
-		return nil
-	}
-
-	rc, err := file.Open()
-	if err != nil {
-		return err
-	}
-	defer rc.Close()
 
 	isFlat := !z.Flat.IsNull() && z.Flat.ValueBool()
 	filename := absoluteFileName(outputDir, file.Name, isFlat)
 
-	err = os.MkdirAll(path.Dir(filename), DEFAULT_DIR_MODE)
-	if err != nil {
-		return err
+	if file.Method == zip.Store {
+		if isFlat {
+			return "", nil
+		}
+
+		err := os.MkdirAll(filename, DEFAULT_DIR_MODE)
+		if err != nil {
+			return "", err
+		}
 	}
+
+	rc, err := file.Open()
+	if err != nil {
+		return "", err
+	}
+	defer rc.Close()
 
 	cf, err := os.Create(filename)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	_, err = io.Copy(cf, rc)
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	return nil
+	return filename, nil
 }
 
-func (z zipFileDataSourceModel) extract(ctx context.Context) (string, error) {
+func (z zipFileDataSourceModel) extract(ctx context.Context) extractInfo {
 	zipFile := z.FileName.ValueString()
 	rc, err := zip.OpenReader(zipFile)
 	if err != nil {
-		return "Error occured when open zip file", err
+		return extractInfo{
+			msg: "Error occured when open zip file",
+			err: err,
+		}
 	}
 	defer rc.Close()
 
@@ -136,14 +148,22 @@ func (z zipFileDataSourceModel) extract(ctx context.Context) (string, error) {
 	ch = filter(ch, toPatterns(z.Includes).doesNameMatchPatterns)
 	ch = filter(ch, toPatterns(z.Excludes).doesNotNameMatchPatterns)
 
+	filenames := make([]string, 0)
 	for file := range ch {
-
-		err = z.copyFile(file)
+		filename, err := z.copyFile(file)
 		if err != nil {
-			return "Error occured when copy file", err
+			return extractInfo{
+				msg: "Error occured when copy file",
+				err: err,
+			}
+		}
+		if filename != "" {
+			filenames = append(filenames, filename)
 		}
 	}
-	return "", nil
+	return extractInfo{
+		filenames: filenames,
+	}
 }
 
 func filesInSliceToChan(files []*zip.File) <-chan *zip.File {
@@ -161,13 +181,22 @@ func filesInSliceToChan(files []*zip.File) <-chan *zip.File {
 func (c zipFileDataSourceModel) decideOutputDir() string {
 	outputDir, err := os.Getwd()
 	if err != nil {
-		outputDir = "./"
+		outputDir = "."
 	}
 
 	if !c.Output.IsNull() && !c.Output.IsUnknown() {
 		outputDir = c.Output.ValueString()
 	}
 	return outputDir
+}
+
+func (z *zipFileDataSourceModel) addFileNames(filenames []string) {
+	values := make([]attr.Value, len(filenames))
+	for index, value := range filenames {
+		values[index] = types.StringValue(value)
+	}
+
+	z.FileNames, _ = types.ListValue(types.StringType, values)
 }
 
 func filter(ch <-chan *zip.File, test func(filename string) bool) <-chan *zip.File {
