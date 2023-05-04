@@ -158,6 +158,18 @@ func filesInSliceToChan(files []*zip.File) <-chan *zip.File {
 	return ch
 }
 
+func (c zipFileDataSourceModel) decideOutputDir() string {
+	outputDir, err := os.Getwd()
+	if err != nil {
+		outputDir = "./"
+	}
+
+	if !c.Output.IsNull() && !c.Output.IsUnknown() {
+		outputDir = c.Output.ValueString()
+	}
+	return outputDir
+}
+
 func filter(ch <-chan *zip.File, test func(filename string) bool) <-chan *zip.File {
 	outCh := make(chan *zip.File)
 	go func() {
