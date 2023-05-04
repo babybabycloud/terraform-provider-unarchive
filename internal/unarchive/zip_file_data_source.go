@@ -17,24 +17,24 @@ const DEFAULT_DIR_MODE = 0740
 
 // Ensure the implementation satisfies the expected interfaces.
 var (
-	_ datasource.DataSource = &zipFileDataSource{}
+	_ datasource.DataSource = &fileDataSource{}
 )
 
-// NewZipFileDataSource is a helper function to simplify the provider implementation.
-func NewZipFileDataSource() datasource.DataSource {
-	return &zipFileDataSource{}
+// NewFileDataSource is a helper function to simplify the provider implementation.
+func NewFileDataSource() datasource.DataSource {
+	return &fileDataSource{}
 }
 
-// zipFileDataSource is the data source implementation.
-type zipFileDataSource struct{}
+// fileDataSource is the data source implementation.
+type fileDataSource struct{}
 
 // Metadata returns the data source type name.
-func (d *zipFileDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_zip_file"
+func (d *fileDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_file"
 }
 
 // Schema defines the schema for the data source.
-func (d *zipFileDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (d *fileDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Attributes: map[string]schema.Attribute{
 			"file_name": schema.StringAttribute{
@@ -63,8 +63,8 @@ func (d *zipFileDataSource) Schema(_ context.Context, _ datasource.SchemaRequest
 }
 
 // Read refreshes the Terraform state with the latest data.
-func (d *zipFileDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var config zipFileDataSourceModel
+func (d *fileDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+	var config fileDataSourceModel
 	diag := req.Config.Get(ctx, &config)
 	if diag.HasError() {
 		for _, diagnotic := range diag.Errors() {
@@ -83,7 +83,7 @@ func (d *zipFileDataSource) Read(ctx context.Context, req datasource.ReadRequest
 	resp.State.Set(ctx, &config)
 }
 
-type zipFileDataSourceModel struct {
+type fileDataSourceModel struct {
 	FileName  types.String `tfsdk:"file_name"`
 	Output    types.String `tfsdk:"output"`
 	Includes  types.List   `tfsdk:"includes"`
@@ -92,7 +92,7 @@ type zipFileDataSourceModel struct {
 	FileNames types.List   `tfsdk:"file_names"`
 }
 
-func (z zipFileDataSourceModel) copyFile(file *zip.File) (string, error) {
+func (z fileDataSourceModel) copyFile(file *zip.File) (string, error) {
 	outputDir := z.decideOutputDir()
 	err := os.MkdirAll(outputDir, DEFAULT_DIR_MODE)
 	if err != nil {
@@ -111,6 +111,7 @@ func (z zipFileDataSourceModel) copyFile(file *zip.File) (string, error) {
 		if err != nil {
 			return "", err
 		}
+		return "", nil
 	}
 
 	rc, err := file.Open()
@@ -132,9 +133,9 @@ func (z zipFileDataSourceModel) copyFile(file *zip.File) (string, error) {
 	return filename, nil
 }
 
-func (z zipFileDataSourceModel) extract(ctx context.Context) extractInfo {
-	zipFile := z.FileName.ValueString()
-	rc, err := zip.OpenReader(zipFile)
+func (z fileDataSourceModel) extract(ctx context.Context) extractInfo {
+	file := z.FileName.ValueString()
+	rc, err := zip.OpenReader(file)
 	if err != nil {
 		return extractInfo{
 			msg: "Error occured when open zip file",
@@ -178,7 +179,7 @@ func filesInSliceToChan(files []*zip.File) <-chan *zip.File {
 	return ch
 }
 
-func (c zipFileDataSourceModel) decideOutputDir() string {
+func (c fileDataSourceModel) decideOutputDir() string {
 	outputDir, err := os.Getwd()
 	if err != nil {
 		outputDir = "."
@@ -190,7 +191,7 @@ func (c zipFileDataSourceModel) decideOutputDir() string {
 	return outputDir
 }
 
-func (z *zipFileDataSourceModel) addFileNames(filenames []string) {
+func (z *fileDataSourceModel) addFileNames(filenames []string) {
 	values := make([]attr.Value, len(filenames))
 	for index, value := range filenames {
 		values[index] = types.StringValue(value)
