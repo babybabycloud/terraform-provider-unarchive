@@ -16,6 +16,7 @@ func toPatterns(list types.List) patterns {
 	if !list.IsNull() {
 		patternsInType := make([]types.String, len(list.Elements()))
 		p = make(patterns, len(list.Elements()))
+		list.ElementsAs(context.TODO(), &patternsInType, false)
 		for index, value := range patternsInType {
 			p[index] = value.ValueString()
 		}
@@ -24,11 +25,6 @@ func toPatterns(list types.List) patterns {
 }
 
 func (p patterns) doesNameMatchPatterns(name string) bool {
-
-	if len(p) == 0 {
-		return true
-	}
-
 	for _, value := range p {
 		matched, err := regexp.MatchString(value, name)
 
@@ -40,12 +36,4 @@ func (p patterns) doesNameMatchPatterns(name string) bool {
 		}
 	}
 	return false
-}
-
-func (p patterns) doesNotNameMatchPatterns(name string) bool {
-	if len(p) == 0 {
-		return true
-	}
-
-	return !p.doesNameMatchPatterns(name)
 }

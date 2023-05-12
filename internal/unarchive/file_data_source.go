@@ -1,11 +1,8 @@
 package unarchive
 
 import (
-	"archive/zip"
 	"context"
-	"io"
 	"os"
-	"path"
 
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -73,7 +70,8 @@ func (d *fileDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
 		return
 	}
 
-	info := config.extract(ctx)
+	file := NewZipFileWithFileDataSourceModel(config)
+	info := file.extract()
 	if info.err != nil {
 		resp.Diagnostics.AddError(info.msg, info.err.Error())
 		return
@@ -92,103 +90,45 @@ type fileDataSourceModel struct {
 	FileNames types.List   `tfsdk:"file_names"`
 }
 
-func (z fileDataSourceModel) copyFile(file *zip.File) (string, error) {
-	outputDir := z.decideOutputDir()
-	err := os.MkdirAll(outputDir, DEFAULT_DIR_MODE)
-	if err != nil {
-		return "", err
-	}
-
-	isFlat := !z.Flat.IsNull() && z.Flat.ValueBool()
-	filename := absoluteFileName(outputDir, file.Name, isFlat)
-
-	if file.Method == zip.Store {
-		if isFlat {
-			return "", nil
-		}
-
-		err := os.MkdirAll(filename, DEFAULT_DIR_MODE)
-		if err != nil {
-			return "", err
-		}
-		return "", nil
-	}
-
-	rc, err := file.Open()
-	if err != nil {
-		return "", err
-	}
-	defer rc.Close()
-
-	cf, err := os.Create(filename)
-	if err != nil {
-		return "", err
-	}
-
-	_, err = io.Copy(cf, rc)
-	if err != nil {
-		return "", err
-	}
-
-	return filename, nil
-}
-
-func (z fileDataSourceModel) extract(ctx context.Context) extractInfo {
-	file := z.FileName.ValueString()
-	rc, err := zip.OpenReader(file)
-	if err != nil {
-		return extractInfo{
-			msg: "Error occured when open zip file",
-			err: err,
-		}
-	}
-	defer rc.Close()
-
-	ch := filesInSliceToChan(rc.File)
-
-	ch = filter(ch, toPatterns(z.Includes).doesNameMatchPatterns)
-	ch = filter(ch, toPatterns(z.Excludes).doesNotNameMatchPatterns)
-
-	filenames := make([]string, 0)
-	for file := range ch {
-		filename, err := z.copyFile(file)
-		if err != nil {
-			return extractInfo{
-				msg: "Error occured when copy file",
-				err: err,
-			}
-		}
-		if filename != "" {
-			filenames = append(filenames, filename)
-		}
-	}
-	return extractInfo{
-		filenames: filenames,
-	}
-}
-
-func filesInSliceToChan(files []*zip.File) <-chan *zip.File {
-	ch := make(chan *zip.File)
-	go func() {
-		defer close(ch)
-
-		for _, file := range files {
-			ch <- file
-		}
-	}()
-	return ch
-}
-
 func (c fileDataSourceModel) decideOutputDir() string {
 	outputDir, err := os.Getwd()
 	if err != nil {
 		outputDir = "."
 	}
 
-	if !c.Output.IsNull() && !c.Output.IsUnknown() {
+	if !c.Output.IsNull() {
 		outputDir = c.Output.ValueString()
 	}
 	return outputDir
+}
+
+func (c fileDataSourceModel) includePatterns() testFunc {
+	if !c.Includes.IsNull() {
+		return func(name string) bool {
+			return toPatterns(c.Includes).doesNameMatchPatterns(name)
+		}
+	}
+	return func(_ string) bool {
+		return true
+	}
+}
+
+func (c fileDataSourceModel) excludePatterns() testFunc {
+	if !c.Excludes.IsNull() {
+		return func(name string) bool {
+			return toPatterns(c.Excludes).doesNameMatchPatterns(name)
+		}
+	}
+	return func(_ string) bool {
+		return false
+	}
+}
+
+func (c fileDataSourceModel) isFlat() bool {
+	if c.Flat.IsNull() {
+		return false
+	}
+	return c.Flat.ValueBool()
 }
 
 func (z *fileDataSourceModel) addFileNames(filenames []string) {
@@ -198,27 +138,4 @@ func (z *fileDataSourceModel) addFileNames(filenames []string) {
 	}
 
 	z.FileNames, _ = types.ListValue(types.StringType, values)
-}
-
-func filter(ch <-chan *zip.File, test func(filename string) bool) <-chan *zip.File {
-	outCh := make(chan *zip.File)
-	go func() {
-		defer close(outCh)
-		for file := range ch {
-			matched := test(file.Name)
-			if matched {
-				outCh <- file
-			}
-		}
-	}()
-	return outCh
-}
-
-func absoluteFileName(outDir, filename string, isFlat bool) string {
-	if isFlat {
-		filename = path.Join(outDir, path.Base(filename))
-	} else {
-		filename = path.Join(outDir, filename)
-	}
-	return filename
 }

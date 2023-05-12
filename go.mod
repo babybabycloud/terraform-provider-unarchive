@@ -1,4 +1,4 @@
-module terraform-provider-unarchive
+module gitee.com/babybabycloud/terraform-provider-unarchive
 
 go 1.20
 
