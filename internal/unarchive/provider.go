@@ -39,7 +39,7 @@ func (p *unarchiveProvider) Configure(ctx context.Context, req provider.Configur
 // DataSources defines the data sources implemented in the provider.
 func (p *unarchiveProvider) DataSources(_ context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
-		NewFileDataSource,
+		NewUnarchiveDataSource,
 	}
 }
 

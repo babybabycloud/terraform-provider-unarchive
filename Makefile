@@ -6,4 +6,4 @@ test:
 
 .PHONY: build
 build: 
-	go build -o /home/vagrant/workspace/terraform-plugin/
+	go build -o ${HOME}/workspace/terraform-plugin/
