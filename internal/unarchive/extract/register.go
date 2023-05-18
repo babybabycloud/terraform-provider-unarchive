@@ -9,28 +9,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
-type handlerType string
-
-const (
-	ZIP   = handlerType(".zip")
-	TAR   = handlerType(".tar")
-	TARGZ = handlerType(".tar.gz")
-)
-
-func getHandler(hType handlerType) handler {
-	switch hType {
-	case ZIP:
-		return &zipHandler{}
-	case TAR:
-		return &tarHandler{}
-	case TARGZ:
-		return &targzHandler{}
-	default:
-		// Add unknown handler
-		return nil
-	}
-}
-
 func copy(name string, r io.Reader) error {
 	w, err := createFile(name)
 	if err != nil {
@@ -69,7 +47,7 @@ func Extract(conf *Config) ExtractInfo {
 		}
 	}
 
-	handler := getHandler(handlerType(conf.Type))
+	handler := getHandler(conf.Type)
 
 	err = handler.open(conf.Name)
 	if err != nil {

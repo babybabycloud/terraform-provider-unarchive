@@ -26,7 +26,7 @@ output "file_name" {
 data "unarchive_file" "tar" {
   file_name = "h.tar.gz"
   output = "targz"
-  type = ".tar.gz"
+  type = ".txt"
 }
 
 output "tar_names" {

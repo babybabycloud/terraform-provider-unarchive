@@ -4,8 +4,11 @@ import (
 	"context"
 
 	"gitee.com/babybabycloud/terraform-provider-unarchive/internal/unarchive/extract"
+	"gitee.com/babybabycloud/terraform-provider-unarchive/internal/unarchive/model"
+	v "gitee.com/babybabycloud/terraform-provider-unarchive/internal/unarchive/validator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -52,6 +55,9 @@ func (d *unarchiveDataSource) Schema(_ context.Context, _ datasource.SchemaReque
 			},
 			"type": schema.StringAttribute{
 				Required: true,
+				Validators: []validator.String{
+					&v.HandlerTypeValidator{},
+				},
 			},
 			"file_names": schema.ListAttribute{
 				ElementType: types.StringType,
@@ -63,7 +69,7 @@ func (d *unarchiveDataSource) Schema(_ context.Context, _ datasource.SchemaReque
 
 // Read refreshes the Terraform state with the latest data.
 func (d *unarchiveDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var model unarchiveDataSourceModel
+	var model model.UnarchiveDataSourceModel
 	diag := req.Config.Get(ctx, &model)
 	if diag.HasError() {
 		for _, diagnotic := range diag.Errors() {
@@ -75,10 +81,10 @@ func (d *unarchiveDataSource) Read(ctx context.Context, req datasource.ReadReque
 	conf := &extract.Config{
 		Ctx:     ctx,
 		Name:    model.FileName.ValueString(),
-		Include: model.includePatterns(),
-		Exclude: model.excludePatterns(),
-		Outdir:  model.decideOutputDir(),
-		IsFlat:  model.isFlat(),
+		Include: model.IncludePatterns(),
+		Exclude: model.ExcludePatterns(),
+		Outdir:  model.DecideOutputDir(),
+		IsFlat:  model.IsFlat(),
 		Type:    model.Type.ValueString(),
 	}
 	info := extract.Extract(conf)
@@ -88,6 +94,6 @@ func (d *unarchiveDataSource) Read(ctx context.Context, req datasource.ReadReque
 		return
 	}
 
-	model.addFileNames(info.FileNames)
+	model.AddFileNames(info.FileNames)
 	resp.State.Set(ctx, &model)
 }
