@@ -5,8 +5,10 @@ import (
 	"path/filepath"
 )
 
+// TestFunc is a function with a string parameter to check includes and excludes
 type TestFunc func(string) bool
 
+// Config is an internal form of unarchive data source model
 type Config struct {
 	Ctx     context.Context
 	Name    string

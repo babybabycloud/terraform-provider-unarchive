@@ -2,6 +2,7 @@ package extract
 
 import "fmt"
 
+// ExtractInfo is the result of the extraction
 type ExtractInfo struct {
 	FileNames []string
 	Msg       string

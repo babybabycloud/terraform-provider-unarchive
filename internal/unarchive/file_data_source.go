@@ -12,8 +12,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-const DEFAULT_DIR_MODE = 0740
-
 // Ensure the implementation satisfies the expected interfaces.
 var (
 	_ datasource.DataSource = &unarchiveDataSource{}

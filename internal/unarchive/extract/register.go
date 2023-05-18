@@ -9,6 +9,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
+const DEFAULT_DIR_MODE = 0740
+
 func copy(name string, r io.Reader) error {
 	w, err := createFile(name)
 	if err != nil {
@@ -38,6 +40,7 @@ func createFile(name string) (io.WriteCloser, error) {
 	return cf, err
 }
 
+// Extract is the main function to extract files from an archive file
 func Extract(conf *Config) ExtractInfo {
 	err := os.MkdirAll(conf.Outdir, DEFAULT_DIR_MODE)
 	if err != nil {

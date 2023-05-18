@@ -6,8 +6,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
-const DEFAULT_DIR_MODE = 0740
-
 type zipHandler struct {
 	rc *zip.ReadCloser
 }
