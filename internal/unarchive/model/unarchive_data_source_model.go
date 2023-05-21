@@ -38,7 +38,7 @@ func (c UnarchiveDataSourceModel) IncludePatterns() extract.TestFunc {
 	if !c.Includes.IsNull() {
 		patterns := common.ToPatterns(c.Includes)
 		return func(name string) bool {
-			return patterns.DoesNameMatchPatterns(name)
+			return patterns.DoesNameMatch(name)
 		}
 	}
 	return func(_ string) bool {
@@ -51,7 +51,7 @@ func (c UnarchiveDataSourceModel) ExcludePatterns() extract.TestFunc {
 	if !c.Excludes.IsNull() {
 		patterns := common.ToPatterns(c.Excludes)
 		return func(name string) bool {
-			return patterns.DoesNameMatchPatterns(name)
+			return patterns.DoesNameMatch(name)
 		}
 	}
 	return func(_ string) bool {

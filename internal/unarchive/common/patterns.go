@@ -25,8 +25,8 @@ func ToPatterns(list types.List) patterns {
 	return p
 }
 
-// DoesNameMatchPatterns checkes if the name matches any value in patterns
-func (p patterns) DoesNameMatchPatterns(name string) bool {
+// DoesNameMatch checkes if the name matches any value in patterns
+func (p patterns) DoesNameMatch(name string) bool {
 	for _, value := range p {
 		matched, err := regexp.MatchString(value, name)
 
