@@ -34,6 +34,7 @@ func (z *zipHandler) generate(conf *Config) <-chan *item {
 				copyItem:  file,
 				name:      zipFile.Name,
 				isRegFile: zipFile.Method == zip.Deflate,
+				mode:      int64(zipFile.Mode()),
 			}
 		}
 	}()

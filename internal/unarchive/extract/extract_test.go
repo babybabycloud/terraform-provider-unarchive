@@ -16,7 +16,11 @@ func TestCopy(t *testing.T) {
 	content := []byte("Test file")
 	reader.Write(content)
 
-	err := copy(name, &reader)
+	itemInfo := &item{
+		copyItem: &reader,
+		name:     name,
+	}
+	err := copy(itemInfo)
 	assert.Nil(t, err)
 	defer os.Remove(name)
 

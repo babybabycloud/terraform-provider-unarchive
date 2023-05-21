@@ -44,6 +44,7 @@ func (t *tarHandler) generate(conf *Config) <-chan *item {
 				copyItem:  reader,
 				name:      header.Name,
 				isRegFile: header.Typeflag == tar.TypeReg,
+				mode:      header.Mode,
 			}
 		}
 	}()

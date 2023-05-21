@@ -3,6 +3,7 @@ package extract
 import (
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path"
 
@@ -11,33 +12,33 @@ import (
 
 const DEFAULT_DIR_MODE = 0740
 
-func copy(name string, r io.Reader) error {
-	w, err := createFile(name)
+func copy(info *item) error {
+	w, err := createFile(info)
 	if err != nil {
 		return err
 	}
 	defer w.Close()
 
-	_, err = io.Copy(w, r)
+	_, err = io.Copy(w, info.copyItem)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func createFile(name string) (io.WriteCloser, error) {
-	filename := path.Dir(name)
+func createFile(info *item) (io.WriteCloser, error) {
+	filename := path.Dir(info.name)
 	err := os.MkdirAll(filename, DEFAULT_DIR_MODE)
 	if err != nil {
 		return nil, err
 	}
 
-	cf, err := os.Create(name)
+	cf, err := os.OpenFile(info.name, os.O_RDWR|os.O_CREATE|os.O_TRUNC, fs.FileMode(info.mode))
 	if err != nil {
 		return nil, err
 	}
 
-	return cf, err
+	return cf, nil
 }
 
 // Extract is the main function to extract files from an archive file
@@ -68,7 +69,7 @@ func Extract(conf *Config) ExtractInfo {
 		}
 
 		filename := conf.correctFileName(item.name)
-		err = copy(filename, item.copyItem)
+		err = copy(item)
 		if err != nil {
 			tflog.Error(conf.Ctx, err.Error())
 			continue

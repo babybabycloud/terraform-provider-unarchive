@@ -14,6 +14,7 @@ type item struct {
 	copyItem  io.Reader
 	name      string
 	isRegFile bool
+	mode      int64
 }
 
 const (
