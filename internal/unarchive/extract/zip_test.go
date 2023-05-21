@@ -21,7 +21,7 @@ func TestZipGenerate(t *testing.T) {
 	}
 	ch := z.generate(conf)
 
-	items := make([]*item, 2)
+	items := make([]*item, 0)
 	for element := range ch {
 		items = append(items, element)
 	}
