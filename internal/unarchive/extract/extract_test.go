@@ -1,10 +1,8 @@
 package extract
 
 import (
-	"archive/tar"
 	"bytes"
 	"context"
-	"io/ioutil"
 	"os"
 	"strings"
 	"testing"
@@ -22,7 +20,7 @@ func TestCopy(t *testing.T) {
 	assert.Nil(t, err)
 	defer os.Remove(name)
 
-	result, err := ioutil.ReadFile(name)
+	result, err := os.ReadFile(name)
 	assert.Nil(t, err)
 
 	assert.Equal(t, content, result)
@@ -53,35 +51,4 @@ func TestExtract(t *testing.T) {
 	defer os.Remove(expectFileName)
 
 	assert.EqualValues(t, expect, result.FileNames)
-}
-
-func createTestTarFile(t *testing.T, name string) {
-	file, err := os.Create(name)
-	if err != nil {
-		t.Error(err)
-		t.FailNow()
-	}
-
-	content := []byte("Test content")
-
-	writter := tar.NewWriter(file)
-	defer writter.Close()
-
-	header := &tar.Header{
-		Name: "test/include.txt",
-		Mode: 600,
-		Size: int64(len(content)),
-	}
-	writter.WriteHeader(header)
-	writter.Write(content)
-	writter.Flush()
-
-	header = &tar.Header{
-		Name: "test/exclude.txt",
-		Mode: 600,
-		Size: int64(len(content)),
-	}
-	writter.WriteHeader(header)
-	writter.Write(content)
-	writter.Flush()
 }

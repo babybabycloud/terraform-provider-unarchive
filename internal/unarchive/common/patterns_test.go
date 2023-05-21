@@ -10,7 +10,7 @@ import (
 
 func TestToPatternNil(t *testing.T) {
 	patterns := ToPatterns(types.ListNull(types.StringType))
-	assert.Equal(t, 0, len(patterns))
+	assert.Empty(t, patterns)
 }
 
 func TestToPattern(t *testing.T) {
