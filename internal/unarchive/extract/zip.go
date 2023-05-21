@@ -19,26 +19,26 @@ func (z *zipHandler) open(name string) error {
 	return nil
 }
 
-func (z *zipHandler) generate(conf *Config) <-chan *item {
-	ch := make(chan *item)
-	go func() {
-		defer close(ch)
-		for _, zipFile := range z.rc.File {
-			file, err := zipFile.Open()
-			if err != nil {
-				tflog.Error(conf.Ctx, err.Error())
-				continue
-			}
-
-			ch <- &item{
-				copyItem:  file,
-				name:      zipFile.Name,
-				isRegFile: zipFile.Method == zip.Deflate,
-				mode:      int64(zipFile.Mode()),
-			}
+func (z *zipHandler) generate(conf *Config, f testAndCopy) []string {
+	filenames := make([]string, 0)
+	for _, zipFile := range z.rc.File {
+		file, err := zipFile.Open()
+		if err != nil {
+			tflog.Error(conf.Ctx, err.Error())
+			continue
 		}
-	}()
-	return ch
+
+		filename := f(&item{
+			copyItem:  file,
+			name:      zipFile.Name,
+			isRegFile: zipFile.Method == zip.Deflate,
+			mode:      int64(zipFile.Mode()),
+		})
+		if filename != "" {
+			filenames = append(filenames, filename)
+		}
+	}
+	return filenames
 }
 
 func (z *zipHandler) close() {

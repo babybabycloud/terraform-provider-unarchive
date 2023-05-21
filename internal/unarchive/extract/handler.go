@@ -4,9 +4,11 @@ import (
 	"io"
 )
 
+type testAndCopy func(*item) string
+
 type handler interface {
 	open(name string) error
-	generate(*Config) <-chan *item
+	generate(*Config, testAndCopy) []string
 	close()
 }
 

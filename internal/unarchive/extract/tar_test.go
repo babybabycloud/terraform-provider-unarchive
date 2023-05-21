@@ -18,15 +18,13 @@ func TestTarGenerate(t *testing.T) {
 	conf := &Config{
 		Ctx: context.TODO(),
 	}
-	ch := h.generate(conf)
+	filenames := h.generate(conf, func(i *item) string {
+		return i.name
+	})
 
-	items := make([]*item, 0)
-	for element := range ch {
-		items = append(items, element)
-	}
 	defer os.Remove(name)
 
-	assert.NotEmpty(t, items)
+	assert.NotEmpty(t, filenames)
 }
 
 func createTestTarFile(t *testing.T, name string) {

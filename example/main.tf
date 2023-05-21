@@ -8,27 +8,27 @@ terraform {
 
 provider "unarchive" {}
 
-data "unarchive_file" "example" {
-  file_name = "master.zip"
-  flat = true
+data "unarchive_file" "zip" {
+  file_name = "jedis-mock-1.0.8.jar"
+  includes = ["server"]
+  excludes = ["Redis"]
   output = "zip"
   type = ".zip"
 }
 
-output "name" {
-  value = data.unarchive_file.example.file_names
+output "zip_file_names" {
+  value = data.unarchive_file.zip.file_names
 }
 
-output "file_name" {
-  value = data.unarchive_file.example.file_name
-}
-
-data "unarchive_file" "tar" {
-  file_name = "h.tar.gz"
+data "unarchive_file" "targz" {
+  file_name = "Python-3.11.3.tgz"
+  includes = ["Objects"]
+  excludes = ["txt"]
   output = "targz"
-  type = ".txt"
+  type = ".tar.gz"
+  flat = true
 }
 
-output "tar_names" {
-  value = data.unarchive_file.tar.file_names
+output "targz_file_names" {
+  value = data.unarchive_file.targz.file_names
 }

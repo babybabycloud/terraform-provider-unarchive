@@ -19,14 +19,12 @@ func TestTargzGenerate(t *testing.T) {
 	conf := &Config{
 		Ctx: context.TODO(),
 	}
-	ch := h.generate(conf)
+	filenames := h.generate(conf, func(i *item) string {
+		return i.name
+	})
+	defer os.Remove(name)
 
-	items := make([]*item, 0)
-	for element := range ch {
-		items = append(items, element)
-	}
-
-	assert.NotEmpty(t, items)
+	assert.NotEmpty(t, filenames)
 }
 
 func createTestTargzFile(t *testing.T, name string) {

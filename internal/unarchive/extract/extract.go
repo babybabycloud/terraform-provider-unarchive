@@ -59,29 +59,28 @@ func Extract(conf *Config) ExtractInfo {
 	}
 	defer handler.close()
 
-	ch := handler.generate(conf)
-
-	fileNames := make([]string, 0)
-	for item := range ch {
-		if conf.isSkip(item.name) || !item.isRegFile {
-			tflog.Info(conf.Ctx, fmt.Sprintf("Skip %s", item.name))
-			continue
+	filenames := handler.generate(conf, func(itemInfo *item) string {
+		if conf.isSkip(itemInfo.name) || !itemInfo.isRegFile {
+			tflog.Info(conf.Ctx, fmt.Sprintf("Skip %s", itemInfo.name))
+			return ""
 		}
 
-		filename := conf.correctFileName(item.name)
-		err = copy(item)
+		filename := conf.correctFileName(itemInfo.name)
+		itemInfo.name = filename
+		err = copy(itemInfo)
 		if err != nil {
 			tflog.Error(conf.Ctx, err.Error())
-			continue
+			return ""
 		}
 
-		fileNames = append(fileNames, filename)
 		// Close the CopyItem if it can be closed
-		if canClose, ok := item.copyItem.(io.Closer); ok {
+		if canClose, ok := itemInfo.copyItem.(io.Closer); ok {
 			canClose.Close()
 		}
-	}
+		return filename
+	})
+
 	return ExtractInfo{
-		FileNames: fileNames,
+		FileNames: filenames,
 	}
 }

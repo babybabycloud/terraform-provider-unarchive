@@ -3,6 +3,7 @@ package extract
 import (
 	"bytes"
 	"context"
+	"io/fs"
 	"os"
 	"strings"
 	"testing"
@@ -11,7 +12,7 @@ import (
 )
 
 func TestCopy(t *testing.T) {
-	name := "/tmp/src.txt"
+	name := "/tmp/des.txt"
 	var reader bytes.Buffer
 	content := []byte("Test file")
 	reader.Write(content)
@@ -19,6 +20,7 @@ func TestCopy(t *testing.T) {
 	itemInfo := &item{
 		copyItem: &reader,
 		name:     name,
+		mode:     int64(fs.ModePerm),
 	}
 	err := copy(itemInfo)
 	assert.Nil(t, err)

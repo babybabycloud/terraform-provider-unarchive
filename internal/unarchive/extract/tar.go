@@ -24,31 +24,31 @@ func (t *tarHandler) open(name string) error {
 	return nil
 }
 
-func (t *tarHandler) generate(conf *Config) <-chan *item {
+func (t *tarHandler) generate(conf *Config, f testAndCopy) []string {
 	r := t.rc.Back().Value.(io.Reader)
 	reader := tar.NewReader(r)
-	ch := make(chan *item)
-	go func() {
-		defer close(ch)
-		for {
-			header, err := reader.Next()
-			if err == io.EOF {
-				break
-			}
-			if err != nil {
-				tflog.Error(conf.Ctx, fmt.Sprintf("%s, continue", err))
-				continue
-			}
-
-			ch <- &item{
-				copyItem:  reader,
-				name:      header.Name,
-				isRegFile: header.Typeflag == tar.TypeReg,
-				mode:      header.Mode,
-			}
+	filenames := make([]string, 0)
+	for {
+		header, err := reader.Next()
+		if err == io.EOF {
+			break
 		}
-	}()
-	return ch
+		if err != nil {
+			tflog.Error(conf.Ctx, fmt.Sprintf("%s, continue", err))
+			continue
+		}
+
+		filename := f(&item{
+			copyItem:  reader,
+			name:      header.Name,
+			isRegFile: header.Typeflag == tar.TypeReg,
+			mode:      header.Mode,
+		})
+		if filename != "" {
+			filenames = append(filenames, filename)
+		}
+	}
+	return filenames
 }
 
 func (t *tarHandler) close() {

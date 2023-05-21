@@ -23,8 +23,8 @@ func (t *targzHandler) open(name string) error {
 	return nil
 }
 
-func (t *targzHandler) generate(conf *Config) <-chan *item {
-	return t.th.generate(conf)
+func (t *targzHandler) generate(conf *Config, f testAndCopy) []string {
+	return t.th.generate(conf, f)
 }
 
 func (t *targzHandler) close() {

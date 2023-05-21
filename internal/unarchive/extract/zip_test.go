@@ -19,15 +19,12 @@ func TestZipGenerate(t *testing.T) {
 	conf := &Config{
 		Ctx: context.TODO(),
 	}
-	ch := z.generate(conf)
-
-	items := make([]*item, 0)
-	for element := range ch {
-		items = append(items, element)
-	}
+	filenames := z.generate(conf, func(i *item) string {
+		return i.name
+	})
 	defer os.Remove(name)
 
-	assert.NotEmpty(t, items)
+	assert.NotEmpty(t, filenames)
 
 }
 
