@@ -24,6 +24,8 @@ func TestTarGenerate(t *testing.T) {
 	for element := range ch {
 		items = append(items, element)
 	}
+	defer os.Remove(name)
+
 	assert.NotEmpty(t, items)
 }
 
