@@ -35,31 +35,38 @@ func (d *unarchiveDataSource) Schema(_ context.Context, _ datasource.SchemaReque
 	resp.Schema = schema.Schema{
 		Attributes: map[string]schema.Attribute{
 			"file_name": schema.StringAttribute{
-				Required: true,
+				Required:    true,
+				Description: `file_name specifies the file name that need to be unarchived.`,
 			},
 			"output": schema.StringAttribute{
-				Optional: true,
+				Optional:    true,
+				Description: `output specifies where the extracted files to be put.`,
 			},
 			"includes": schema.ListAttribute{
 				ElementType: types.StringType,
 				Optional:    true,
+				Description: `inclules specifies which file should be extracted. It uses regular express to find the files. It is a list`,
 			},
 			"excludes": schema.ListAttribute{
 				ElementType: types.StringType,
 				Optional:    true,
+				Description: `inclules specifies which file should not be extracted. It uses regular express to find the files. It is a list`,
 			},
 			"flat": schema.BoolAttribute{
-				Optional: true,
+				Optional:    true,
+				Description: `flat specifies if the directory should be ignored.`,
 			},
 			"type": schema.StringAttribute{
 				Required: true,
 				Validators: []validator.String{
 					&v.HandlerTypeValidator{},
 				},
+				Description: `type specifies which type of the archive file is to be handled. Valid options are ".zip", ".tar" and ".tar.gz".`,
 			},
 			"file_names": schema.ListAttribute{
 				ElementType: types.StringType,
 				Computed:    true,
+				Description: `file_names indicates whar files have been extracted.`,
 			},
 		},
 	}

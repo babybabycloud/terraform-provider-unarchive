@@ -29,10 +29,14 @@ func (p *unarchiveProvider) Metadata(_ context.Context, _ provider.MetadataReque
 
 // Schema defines the provider-level schema for configuration data.
 func (p *unarchiveProvider) Schema(_ context.Context, _ provider.SchemaRequest, resp *provider.SchemaResponse) {
-	resp.Schema = schema.Schema{}
+	resp.Schema = schema.Schema{
+		MarkdownDescription: `**Unarchive** is helpful to extract files from archvie files.
+		It only supports **ZIP**, **TAR** and **TAR in GZIP** file now.
+		It supports to use **regular expression** to control which file is **included** or **excluded**.`,
+	}
 }
 
-// Configure prepares a HashiCups API client for data sources and resources.
+// Configure prepares for data sources and resources.
 func (p *unarchiveProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
 }
 

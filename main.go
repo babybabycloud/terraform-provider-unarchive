@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 )
 
+//go:generate go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs
 func main() {
 	providerserver.Serve(context.Background(), unarchive.New, providerserver.ServeOpts{
 		// NOTE: This is not a typical Terraform Registry provider address,
