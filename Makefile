@@ -7,3 +7,7 @@ test:
 .PHONY: build
 build: 
 	go build -o ${HOME}/workspace/terraform-plugin/
+
+.PHONY: generate-doc
+generate-doc:
+	go generate ./...
