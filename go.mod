@@ -1,4 +1,4 @@
-module gitee.com/babybabycloud/terraform-provider-unarchive
+module github.com/babybabycloud/terraform-provider-unarchive
 
 go 1.20
 

@@ -3,8 +3,8 @@ package model
 import (
 	"os"
 
-	"gitee.com/babybabycloud/terraform-provider-unarchive/internal/unarchive/common"
-	"gitee.com/babybabycloud/terraform-provider-unarchive/internal/unarchive/extract"
+	"github.com/babybabycloud/terraform-provider-unarchive/internal/unarchive/common"
+	"github.com/babybabycloud/terraform-provider-unarchive/internal/unarchive/extract"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )

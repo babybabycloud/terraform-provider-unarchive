@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	"gitee.com/babybabycloud/terraform-provider-unarchive/internal/unarchive/extract"
-	"gitee.com/babybabycloud/terraform-provider-unarchive/internal/unarchive/model"
+	"github.com/babybabycloud/terraform-provider-unarchive/internal/unarchive/extract"
+	"github.com/babybabycloud/terraform-provider-unarchive/internal/unarchive/model"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 )
 

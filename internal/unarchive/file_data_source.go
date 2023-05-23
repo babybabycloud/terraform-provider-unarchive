@@ -3,9 +3,9 @@ package unarchive
 import (
 	"context"
 
-	"gitee.com/babybabycloud/terraform-provider-unarchive/internal/unarchive/extract"
-	"gitee.com/babybabycloud/terraform-provider-unarchive/internal/unarchive/model"
-	v "gitee.com/babybabycloud/terraform-provider-unarchive/internal/unarchive/validator"
+	"github.com/babybabycloud/terraform-provider-unarchive/internal/unarchive/extract"
+	"github.com/babybabycloud/terraform-provider-unarchive/internal/unarchive/model"
+	v "github.com/babybabycloud/terraform-provider-unarchive/internal/unarchive/validator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"

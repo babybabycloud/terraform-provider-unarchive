@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 
-	"gitee.com/babybabycloud/terraform-provider-unarchive/internal/unarchive"
+	"github.com/babybabycloud/terraform-provider-unarchive/internal/unarchive"
 
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 )
