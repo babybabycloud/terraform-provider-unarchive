@@ -16,6 +16,7 @@ jobs:
   generate-docs:
     executor: go
     steps:
+      - checkout
       - run: make generate-doc
 
 
