@@ -30,7 +30,7 @@ jobs:
       - checkout
       - run:
           name: Download Goreleaser
-          command: curl -sfLo $GORELEASER_TAR_FILE $GORELEASER_URL
+          command: curl -fLo $GORELEASER_TAR_FILE $GORELEASER_URL
       - run:
           name: Unarchive
           command: tar -xf $GORELEASER_TAR_FILE goreleaser
