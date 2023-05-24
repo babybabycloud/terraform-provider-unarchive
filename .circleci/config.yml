@@ -23,7 +23,7 @@ jobs:
   build:
     executor: go
     environment:
-      GORELEASER_URL: https://github.com/goreleaser/goreleaser/releases/download/v1.18.2/goreleaser_Linux_arm64.tar.gz
+      GORELEASER_URL: https://github.com/goreleaser/goreleaser/releases/download/v1.18.2/goreleaser_Linux_x86_64.tar.gz
       GORELEASER_TAR_FILE: goreleaser.tar.gz
     steps:
       - checkout
