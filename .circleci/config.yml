@@ -16,7 +16,7 @@ jobs:
   generate-docs:
     executor: go
     steps:
-      - run: generate-doc
+      - run: make generate-doc
 
 
 workflows:
