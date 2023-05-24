@@ -15,13 +15,35 @@ jobs:
       - run: make test
   generate-docs:
     executor: go
+    environment:
+      GORELEASER_VERSION: 1.18.2
     steps:
       - checkout
       - run: make generate-doc
+  build:
+    executor: go
+    environment:
+      GORELEASER_VERSION: 1.18.2
+      GORELEASER_URL: https://github.com/goreleaser/goreleaser/releases/download/v$GORELEASER_VERSION/goreleaser_Linux_arm64.tar.gz
+      GORELEASER_TAR_FILE: goreleaser.tar.gz
+    steps:
+      - checkout
+      - run:
+          name: Download Goreleaser
+          command: curl -sfLo $GORELEASER_TAR_FILE $GORELEASER_URL
+      - run:
+          name: Unarchive
+          command: tar -xf $GORELEASER_TAR_FILE goreleaser
+      - run:
+          name: Build
+          command: ./goreleaser build
 
 
 workflows:
   publish_to_registry:
     jobs:
-      - lint-test
       - generate-docs
+      - build
+  check:
+    jobs:
+      - lint-test
