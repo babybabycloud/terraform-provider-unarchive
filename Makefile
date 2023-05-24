@@ -11,3 +11,7 @@ build:
 .PHONY: generate-doc
 generate-doc:
 	go generate ./...
+
+.PHONY: lint
+lint:
+	golangci-lint run

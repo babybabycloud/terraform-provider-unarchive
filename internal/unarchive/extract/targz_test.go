@@ -14,7 +14,7 @@ func TestTargzGenerate(t *testing.T) {
 	name := "/tmp/targzfile.tar.gz"
 	createTestTargzFile(t, name)
 	h := &targzHandler{}
-	h.open(name)
+	_ = h.open(name)
 	defer h.close()
 	conf := &Config{
 		Ctx: context.TODO(),
@@ -47,8 +47,8 @@ func createTestTargzFile(t *testing.T, name string) {
 		Mode: 600,
 		Size: int64(len(content)),
 	}
-	writter.WriteHeader(header)
-	writter.Write(content)
+	_ = writter.WriteHeader(header)
+	_, _ = writter.Write(content)
 	writter.Flush()
 
 	header = &tar.Header{
@@ -56,7 +56,7 @@ func createTestTargzFile(t *testing.T, name string) {
 		Mode: 600,
 		Size: int64(len(content)),
 	}
-	writter.WriteHeader(header)
-	writter.Write(content)
+	_ = writter.WriteHeader(header)
+	_, _ = writter.Write(content)
 	writter.Flush()
 }

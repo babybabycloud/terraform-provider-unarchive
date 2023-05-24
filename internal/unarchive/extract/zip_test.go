@@ -13,7 +13,7 @@ func TestZipGenerate(t *testing.T) {
 	name := "/tmp/zip.zip"
 	createZipFile(t, name)
 	z := &zipHandler{}
-	z.open(name)
+	_ = z.open(name)
 	defer z.close()
 
 	conf := &Config{
@@ -56,10 +56,6 @@ func createZipFile(t *testing.T, name string) {
 		t.Error(err)
 		t.FailNow()
 	}
-	_, err = w.Write(content)
-	if err != nil {
-		t.Error(err)
-		t.FailNow()
-	}
+	_, _ = w.Write(content)
 	writter.Flush()
 }

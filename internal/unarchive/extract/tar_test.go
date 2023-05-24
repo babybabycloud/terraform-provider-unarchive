@@ -13,7 +13,7 @@ func TestTarGenerate(t *testing.T) {
 	name := "/tmp/tarfile.tar"
 	createTestTarFile(t, name)
 	h := &tarHandler{}
-	h.open(name)
+	_ = h.open(name)
 	defer h.close()
 	conf := &Config{
 		Ctx: context.TODO(),
@@ -45,8 +45,8 @@ func createTestTarFile(t *testing.T, name string) {
 		Mode: 600,
 		Size: int64(len(content)),
 	}
-	writter.WriteHeader(header)
-	writter.Write(content)
+	_ = writter.WriteHeader(header)
+	_, _ = writter.Write(content)
 	writter.Flush()
 
 	header = &tar.Header{
@@ -54,7 +54,7 @@ func createTestTarFile(t *testing.T, name string) {
 		Mode: 600,
 		Size: int64(len(content)),
 	}
-	writter.WriteHeader(header)
-	writter.Write(content)
+	_ = writter.WriteHeader(header)
+	_, _ = writter.Write(content)
 	writter.Flush()
 }
