@@ -1,3 +1,16 @@
 # CircleCI configuration file
 
 version: 2.1
+
+jobs:
+  lint:
+    docker:
+      - image: cimg/go:1.20.4
+    steps:
+      - checkout
+      - run: make lint
+
+workflows:
+  publish_to_registry:
+    jobs:
+      - lint
