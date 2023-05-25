@@ -13,36 +13,52 @@ jobs:
       - checkout
       - run: make lint
       - run: make test
-  generate-docs:
-    executor: go
-    environment:
-      GORELEASER_VERSION: 1.18.2
-    steps:
-      - checkout
-      - run: make generate-doc
   build:
     executor: go
-    environment:
-      GORELEASER_URL: https://github.com/goreleaser/goreleaser/releases/download/v1.18.2/goreleaser_Linux_x86_64.tar.gz
-      GORELEASER_TAR_FILE: goreleaser.tar.gz
+    parameters:
+      gorelaser_url:
+        description: Goreleaser 1.18.2 download URL
+        type: string
+        default: https://github.com/goreleaser/goreleaser/releases/download/v1.18.2/goreleaser_Linux_x86_64.tar.gz
+      gorelaser_output_name:
+        description: Goreleaser 1.18.2 downloaded file name
+        type: string
+        default: goreleaser.tar.gz
     steps:
       - checkout
       - run:
           name: Download Goreleaser
-          command: curl -fLo $GORELEASER_TAR_FILE $GORELEASER_URL
+          command: curl -fLo << parameters.gorelaser_output_name >> << parameters.gorelaser_url >>
       - run:
           name: Unarchive
-          command: tar -xf $GORELEASER_TAR_FILE goreleaser
+          command: tar -xf << parameters.gorelaser_output_name >> goreleaser
       - run:
           name: Build
           command: ./goreleaser build
+      - save_cache:
+          key: binaries
+          paths:
+            - dist
+            - goreleaser
+  publish:
+    executor: go
+    steps:
+      - restore_cache:
+          keys:
+            - binaries
+      - run:
+          name: release
+          command: ./goreleaser release
 
 
 workflows:
-  publish_to_registry:
+  build-publish:
+    when: << pipeline.git.tag >>
     jobs:
-      - generate-docs
       - build
+      - publish:
+          requires:
+            - build
   check:
     jobs:
       - lint-test
