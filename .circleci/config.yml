@@ -53,7 +53,8 @@ jobs:
 
 workflows:
   build-publish:
-    when: << pipeline.git.tag >>
+    when:
+      matches: { pattern: "^v([0-9]+\\.){2}[0-9]+$", value: << pipeline.git.branch >> }
     jobs:
       - build
       - publish:
