@@ -1,0 +1,63 @@
+# CircleCI configuration file
+
+version: 2.1
+executors:
+  go:
+    docker:
+      - image: cimg/go:1.20.4
+
+jobs:
+  lint-test:
+    executor: go
+    steps:
+      - checkout
+      - run: make lint
+      - run: make test
+  build:
+    executor: go
+    parameters:
+      gorelaser_url:
+        description: Goreleaser 1.18.2 download URL
+        type: string
+        default: https://github.com/goreleaser/goreleaser/releases/download/v1.18.2/goreleaser_Linux_x86_64.tar.gz
+      gorelaser_output_name:
+        description: Goreleaser 1.18.2 downloaded file name
+        type: string
+        default: goreleaser.tar.gz
+    steps:
+      - checkout
+      - run:
+          name: Download Goreleaser
+          command: curl -fLo << parameters.gorelaser_output_name >> << parameters.gorelaser_url >>
+      - run:
+          name: Unarchive
+          command: tar -xf << parameters.gorelaser_output_name >> goreleaser
+      - run:
+          name: Build
+          command: ./goreleaser build
+      - save_cache:
+          key: binaries
+          paths:
+            - dist
+            - goreleaser
+  publish:
+    executor: go
+    steps:
+      - restore_cache:
+          keys:
+            - binaries
+      - run:
+          name: release
+          command: ./goreleaser release
+
+
+workflows:
+  build-publish:
+    jobs:
+      - build
+      - publish:
+          requires:
+            - build
+  check:
+    jobs:
+      - lint-test
