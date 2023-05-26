@@ -60,6 +60,9 @@ jobs:
             gpg --import --batch << parameters.gpg_private_file >>
             rm << parameters.gpg_private_file >>
       - run:
+          name: Enable TTY
+          command: export GPG_TTY=$(tty)
+      - run:
           name: release
           command: << pipeline.parameters.goreleaser_binary >> release
   build:
