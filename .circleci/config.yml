@@ -6,6 +6,12 @@ executors:
     docker:
       - image: cimg/go:1.20.4
 
+parameters:
+  goreleaser_binary:
+    description: The path of the goreleaser binary
+    type: string
+    default: "/tmp/goreleaser"
+
 jobs:
   lint-test:
     executor: go
@@ -23,7 +29,7 @@ jobs:
       gorelaser_output_name:
         description: Goreleaser 1.18.2 downloaded file name
         type: string
-        default: goreleaser.tar.gz
+        default: << pipeline.parameters.goreleaser_binary >>.tar.gz
     steps:
       - checkout
       - run:
@@ -31,15 +37,15 @@ jobs:
           command: curl -fLo << parameters.gorelaser_output_name >> << parameters.gorelaser_url >>
       - run:
           name: Unarchive
-          command: tar -xf << parameters.gorelaser_output_name >> goreleaser
+          command: tar -xf << parameters.gorelaser_output_name >> << pipeline.parameters.goreleaser_binary >>
       - run:
           name: Build
-          command: ./goreleaser build
+          command: << pipeline.parameters.goreleaser_binary >> build
       - save_cache:
           key: binaries
           paths:
             - dist
-            - goreleaser
+            - << pipeline.parameters.goreleaser_binary >>
   publish:
     executor: go
     steps:
@@ -48,7 +54,7 @@ jobs:
             - binaries
       - run:
           name: release
-          command: ./goreleaser release
+          command: << pipeline.parameters.goreleaser_binary >> release
 
 
 workflows:
