@@ -45,17 +45,6 @@ jobs:
       - run:
           name: Build
           command: << pipeline.parameters.goreleaser_binary >> build
-      - save_cache:
-          key: binaries
-          paths:
-            - dist
-            - << pipeline.parameters.goreleaser_binary >>
-  publish:
-    executor: go
-    steps:
-      - restore_cache:
-          keys:
-            - binaries
       - run:
           name: release
           command: << pipeline.parameters.goreleaser_binary >> release
@@ -66,12 +55,6 @@ workflows:
     when: << pipeline.git.tag >>
     jobs:
       - build:
-          filters:
-            tags:
-              only: << pipeline.parameters.release_pattern >>
-      - publish:
-          requires:
-            - build
           filters:
             tags:
               only: << pipeline.parameters.release_pattern >>
