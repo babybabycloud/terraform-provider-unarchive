@@ -43,9 +43,6 @@ jobs:
           name: Unarchive
           command: tar -xf << parameters.gorelaser_output_name >> -C /tmp goreleaser
       - run:
-          name: Build
-          command: << pipeline.parameters.goreleaser_binary >> build
-      - run:
           name: release
           command: << pipeline.parameters.goreleaser_binary >> release
 
