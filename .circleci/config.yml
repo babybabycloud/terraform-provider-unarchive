@@ -37,7 +37,7 @@ jobs:
           command: curl -fLo << parameters.gorelaser_output_name >> << parameters.gorelaser_url >>
       - run:
           name: Unarchive
-          command: tar -xf << parameters.gorelaser_output_name >> << pipeline.parameters.goreleaser_binary >>
+          command: tar -xf << parameters.gorelaser_output_name >> -C /tmp goreleaser
       - run:
           name: Build
           command: << pipeline.parameters.goreleaser_binary >> build
