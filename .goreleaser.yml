@@ -50,7 +50,6 @@ signs:
       - "${signature}"
       - "--detach-sign"
       - "${artifact}"
-    stdin: '{{ .Env.GPG_PASSWORD }}'
 release:
   extra_files:
     - glob: 'terraform-registry-manifest.json'

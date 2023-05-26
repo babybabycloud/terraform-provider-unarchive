@@ -54,11 +54,22 @@ jobs:
       - checkout
       - get-goreleaser
       - run:
-          name: Import GPG
+          name: Prepare GPG
           command: |
             echo -e ${GPG_PRIVATE_KEY} > << parameters.gpg_private_file >>
             gpg --import --batch << parameters.gpg_private_file >>
             rm << parameters.gpg_private_file >>
+            cat > ~/.gnupg/gpg-agent.conf << EOF
+              default-cache-ttl 46000
+              pinentry-program /usr/bin/pinentry-gtk-2
+              allow-preset-passphrase
+            EOF
+            gpg-connect-agent reloadagent /bye
+            keygrip=$(gpg-connect-agent -q 'keyinfo --list' /bye | awk '/KEYINFO/ { print $3 }')
+            for k in $keygrip
+            do
+              echo "$GPG_PASSWORD"  | /usr/lib/gnupg/gpg-preset-passphrase --preset $k
+            done
       - run:
           name: release
           command: |
