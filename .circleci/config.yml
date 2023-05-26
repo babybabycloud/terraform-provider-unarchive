@@ -16,15 +16,9 @@ parameters:
     type: string
     default: /^v([0-9]+\.){2}[0-9]+/
 
-jobs:
-  lint-test:
-    executor: go
-    steps:
-      - checkout
-      - run: make lint
-      - run: make test
-  build:
-    executor: go
+commands:
+  get-goreleaser:
+    description: Get goreleaser
     parameters:
       gorelaser_url:
         description: Goreleaser 1.18.2 download URL
@@ -35,26 +29,62 @@ jobs:
         type: string
         default: << pipeline.parameters.goreleaser_binary >>.tar.gz
     steps:
-      - checkout
       - run:
           name: Download Goreleaser
           command: curl -fLo << parameters.gorelaser_output_name >> << parameters.gorelaser_url >>
       - run:
           name: Unarchive
           command: tar -xf << parameters.gorelaser_output_name >> -C /tmp goreleaser
+
+jobs:
+  lint-test:
+    executor: go
+    steps:
+      - checkout
+      - run: make lint
+      - run: make test
+  release:
+    executor: go
+    parameters:
+      gpg_private_file:
+        description: The path of GPG private file
+        type: string
+        default: /tmp/private.txt
+    steps:
+      - checkout
+      - get-goreleaser
+      - run:
+          name: Import GPG
+          command: |
+            echo ${GPG_PRIVATE_KEY} > << parameters.gpg_private_file >>
+            gpg --import --batch << parameters.gpg_private_file >>
+            rm << parameters.gpg_private_file >>
       - run:
           name: release
           command: << pipeline.parameters.goreleaser_binary >> release
+  build:
+    executor: go
+    steps:
+      - checkout
+      - get-goreleaser
+      - run:
+          name: build
+          command: << pipeline.parameters.goreleaser_binary >> build
 
 
 workflows:
-  build-publish:
+  publish:
     when: << pipeline.git.tag >>
     jobs:
-      - build:
+      - release:
           filters:
             tags:
               only: << pipeline.parameters.release_pattern >>
   check:
     jobs:
       - lint-test
+  build-master:
+    when:
+      equal: [ master, << pipeline.git.branch >> ]
+    jobs:
+      - build
