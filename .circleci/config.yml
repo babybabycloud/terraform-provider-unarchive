@@ -59,9 +59,9 @@ jobs:
             echo -e ${GPG_PRIVATE_KEY} > << parameters.gpg_private_file >>
             gpg --import --batch << parameters.gpg_private_file >>
             rm << parameters.gpg_private_file >>
-            cat "default-cache-ttl 46000" > ~/.gnupg/gpg-agent.conf
-            cat "pinentry-program /usr/bin/pinentry-gtk-2" >> ~/.gnupg/gpg-agent.conf
-            cat "allow-preset-passphrase" >> ~/.gnupg/gpg-agent.conf
+            echo "default-cache-ttl 46000" > ~/.gnupg/gpg-agent.conf
+            echo "pinentry-program /usr/bin/pinentry-gtk-2" >> ~/.gnupg/gpg-agent.conf
+            echo "allow-preset-passphrase" >> ~/.gnupg/gpg-agent.conf
             gpg-connect-agent reloadagent /bye
             keygrip=$(gpg-connect-agent -q 'keyinfo --list' /bye | awk '/KEYINFO/ { print $3 }')
             for k in $keygrip
