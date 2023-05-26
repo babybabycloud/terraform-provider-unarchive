@@ -56,7 +56,7 @@ jobs:
       - run:
           name: Import GPG
           command: |
-            echo ${GPG_PRIVATE_KEY} > << parameters.gpg_private_file >>
+            echo -e ${GPG_PRIVATE_KEY} > << parameters.gpg_private_file >>
             gpg --import --batch << parameters.gpg_private_file >>
             rm << parameters.gpg_private_file >>
       - run:
