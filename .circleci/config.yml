@@ -63,7 +63,7 @@ jobs:
 
 workflows:
   build-publish:
-    when: << pipline.git.tag >>
+    when: << pipeline.git.tag >>
     jobs:
       - build:
           filters:
