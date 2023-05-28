@@ -7,5 +7,11 @@ Please provide the following information
 * Arch
 * The version of Terraform
 
+## What happened
+Please provide what actually happen?
+
+## What is the expectation
+Please provide What the expectation is?
+
 ## Details
 Please provider more error details
