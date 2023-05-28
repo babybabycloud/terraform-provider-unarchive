@@ -80,7 +80,7 @@ jobs:
       - get-goreleaser
       - run:
           name: build
-          command: << pipeline.parameters.goreleaser_binary >> build
+          command: << pipeline.parameters.goreleaser_binary >> build --snapshot
 
 
 workflows:
