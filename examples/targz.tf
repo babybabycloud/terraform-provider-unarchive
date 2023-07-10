@@ -4,8 +4,12 @@ data "unarchive_file" "targz" {
   type = ".tar.gz"
   filters = [
     {
-      "includes": ["operations/lists"],
-      "excludes": ["P"]
+      "includes": ["Objects"],
+      "excludes": ["\\.h$"]
+    },
+    {
+      "includes": ["Lib"],
+      "excludes": ["\\.py$"],
     }
   ]
 }

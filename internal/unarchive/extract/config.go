@@ -63,7 +63,7 @@ func (c *Config) isSkip(name string) bool {
 			return false
 		}
 	}
-	return true
+	return len(c.Filters) != 0
 }
 
 func (c *Config) correctFileName(filename string) string {
