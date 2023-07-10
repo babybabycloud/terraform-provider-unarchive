@@ -5,9 +5,9 @@ import (
 	"context"
 	"io/fs"
 	"os"
-	"strings"
 	"testing"
 
+	"github.com/babybabycloud/terraform-provider-unarchive/internal/unarchive/common"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -42,11 +42,11 @@ func TestExtract(t *testing.T) {
 		Type:   TAR,
 		IsFlat: true,
 		Outdir: "/tmp",
-		Include: func(name string) bool {
-			return strings.Contains(name, "include")
-		},
-		Exclude: func(name string) bool {
-			return strings.Contains(name, "exclude")
+		Filters: []ConfigFilter{
+			{
+				Includes: common.Patterns{"include"},
+				Excludes: common.Patterns{"exclude"},
+			},
 		},
 	}
 

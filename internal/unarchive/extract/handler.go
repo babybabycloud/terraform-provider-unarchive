@@ -34,7 +34,6 @@ func getHandler(hType string) handler {
 	case TARGZ:
 		return &targzHandler{}
 	default:
-		// Add unknown handler
-		return nil
+		return &unknownHandler{}
 	}
 }

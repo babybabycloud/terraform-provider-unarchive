@@ -3,21 +3,24 @@ package model
 import (
 	"os"
 
-	"github.com/babybabycloud/terraform-provider-unarchive/internal/unarchive/common"
-	"github.com/babybabycloud/terraform-provider-unarchive/internal/unarchive/extract"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
+// FilterModel contains the expressions what include and exclude
+type FilterModel struct {
+	Includes types.List `tfsdk:"includes"`
+	Excludes types.List `tfsdk:"excludes"`
+}
+
 // UnarchiveDataSourceModel is unarchive data source model
 type UnarchiveDataSourceModel struct {
-	FileName  types.String `tfsdk:"file_name"`
-	Output    types.String `tfsdk:"output"`
-	Includes  types.List   `tfsdk:"includes"`
-	Excludes  types.List   `tfsdk:"excludes"`
-	Flat      types.Bool   `tfsdk:"flat"`
-	Type      types.String `tfsdk:"type"`
-	FileNames types.List   `tfsdk:"file_names"`
+	FileName  types.String  `tfsdk:"file_name"`
+	Output    types.String  `tfsdk:"output"`
+	Filters   []FilterModel `tfsdk:"filters"`
+	Flat      types.Bool    `tfsdk:"flat"`
+	Type      types.String  `tfsdk:"type"`
+	FileNames types.List    `tfsdk:"file_names"`
 }
 
 // DecideOutputDir gets the final output directory
@@ -31,32 +34,6 @@ func (c UnarchiveDataSourceModel) DecideOutputDir() string {
 		outputDir = c.Output.ValueString()
 	}
 	return outputDir
-}
-
-// IncludePatterns return a function helps to filter which file is included
-func (c UnarchiveDataSourceModel) IncludePatterns() extract.TestFunc {
-	if !c.Includes.IsNull() {
-		patterns := common.ToPatterns(c.Includes)
-		return func(name string) bool {
-			return patterns.DoesNameMatch(name)
-		}
-	}
-	return func(_ string) bool {
-		return true
-	}
-}
-
-// ExcludePatterns return a function helps to filter which file is excluded
-func (c UnarchiveDataSourceModel) ExcludePatterns() extract.TestFunc {
-	if !c.Excludes.IsNull() {
-		patterns := common.ToPatterns(c.Excludes)
-		return func(name string) bool {
-			return patterns.DoesNameMatch(name)
-		}
-	}
-	return func(_ string) bool {
-		return false
-	}
 }
 
 // IsFlat is if the output file should be flatted

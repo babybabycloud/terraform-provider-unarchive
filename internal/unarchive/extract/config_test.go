@@ -1,52 +1,64 @@
 package extract
 
 import (
+	"context"
 	"path"
 	"testing"
 
+	"github.com/babybabycloud/terraform-provider-unarchive/internal/unarchive/common"
+	"github.com/babybabycloud/terraform-provider-unarchive/internal/unarchive/model"
+	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestConfigExcludeSkip(t *testing.T) {
-	conf := &Config{
-		Include: func(_ string) bool {
-			return true
-		},
-		Exclude: func(_ string) bool {
-			return true
-		},
+func TestFromFilterModel(t *testing.T) {
+	includes, _ := basetypes.NewListValueFrom(context.TODO(), basetypes.StringType{}, []string{"include"})
+	excludes, _ := basetypes.NewListValueFrom(context.TODO(), basetypes.StringType{}, []string{"exclude"})
+	filterModel := model.FilterModel{
+		Includes: includes,
+		Excludes: excludes,
 	}
 
-	result := conf.isSkip("any")
-	assert.True(t, result)
+	configFilter := FromFilterModel(filterModel)
+	expected := ConfigFilter{
+		Includes: common.Patterns{"include"},
+		Excludes: common.Patterns{"exclude"},
+	}
+
+	assert.EqualValues(t, expected, configFilter)
 }
 
-func TestConfigIncludeSkip(t *testing.T) {
-	conf := &Config{
-		Include: func(_ string) bool {
-			return false
+func TestFromUnarchiveDataSourceModel(t *testing.T) {
+	includes, _ := basetypes.NewListValueFrom(context.TODO(), types.StringType, []string{"include pattern"})
+	excludes, _ := basetypes.NewListValueFrom(context.TODO(), types.StringType, []string{"exclude pattern"})
+	m := model.UnarchiveDataSourceModel{
+		FileName: types.StringValue("A file name"),
+		Output:   types.StringValue("Destination"),
+		Filters: []model.FilterModel{
+			{
+				Includes: includes,
+				Excludes: excludes,
+			},
 		},
-		Exclude: func(_ string) bool {
-			return false
+		Flat: types.BoolValue(true),
+		Type: types.StringValue(".tar.gz"),
+	}
+	config := FromUnarchiveDataSourceModel(m)
+	expected := &Config{
+		Name: "A file name",
+		Filters: []ConfigFilter{
+			{
+				Includes: common.Patterns{"include pattern"},
+				Excludes: common.Patterns{"exclude pattern"},
+			},
 		},
+		Outdir: "Destination",
+		IsFlat: true,
+		Type:   ".tar.gz",
 	}
 
-	result := conf.isSkip("any")
-	assert.True(t, result)
-}
-
-func TestConfigNoSkip(t *testing.T) {
-	conf := &Config{
-		Include: func(_ string) bool {
-			return true
-		},
-		Exclude: func(_ string) bool {
-			return false
-		},
-	}
-
-	result := conf.isSkip("any")
-	assert.False(t, result)
+	assert.EqualValues(t, expected, config)
 }
 
 func TestConfigCorrectFileNameFlat(t *testing.T) {

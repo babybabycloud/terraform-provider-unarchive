@@ -21,28 +21,56 @@ func TestToPattern(t *testing.T) {
 	}
 	list, _ := types.ListValueFrom(context.TODO(), types.StringType, elements)
 	p := ToPatterns(list)
-	assert.Equal(t, patterns(elements), p)
+	assert.Equal(t, Patterns(elements), p)
 
 }
 
 func TestDoesNameMatchTrue(t *testing.T) {
-	elements := patterns{
+	elements := Patterns{
 		"src",
 		"Makefile",
 		`^main\.py$`,
 	}
 
-	result := elements.DoesNameMatch("go/src")
+	result := elements.doesNameMatch("go/src")
 	assert.True(t, result)
 }
 
 func TestDoesNameMatchFalse(t *testing.T) {
-	elements := patterns{
+	elements := Patterns{
 		"src",
 		"Makefile",
 		`^main\.py$`,
 	}
 
-	result := elements.DoesNameMatch("go/hello.py")
+	result := elements.doesNameMatch("go/hello.py")
 	assert.False(t, result)
+}
+
+func TestIncludeZeroLength(t *testing.T) {
+	p := make(Patterns, 0)
+	assert.True(t, p.Include("any"))
+}
+
+func TestIncludeMatch(t *testing.T) {
+	p := Patterns{
+		"http",
+		"net",
+	}
+
+	assert.True(t, p.Include("net.py"))
+}
+
+func TestExcludeZeroLength(t *testing.T) {
+	p := make(Patterns, 0)
+	assert.False(t, p.Exclude("any"))
+}
+
+func TestExcludeMatch(t *testing.T) {
+	p := Patterns{
+		"http",
+		"net",
+	}
+
+	assert.True(t, p.Exclude("http"))
 }
