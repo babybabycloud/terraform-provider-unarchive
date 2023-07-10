@@ -42,7 +42,8 @@ func (d *unarchiveDataSource) Schema(_ context.Context, _ datasource.SchemaReque
 				Optional:    true,
 				Description: `output specifies where the extracted files to be put.`,
 			},
-			"filter": schema.ListNestedAttribute{
+			"filters": schema.ListNestedAttribute{
+				Description: `filters specifies what to be included and excluded`,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"includes": schema.ListAttribute{
@@ -57,6 +58,7 @@ func (d *unarchiveDataSource) Schema(_ context.Context, _ datasource.SchemaReque
 						},
 					},
 				},
+				Optional: true,
 			},
 			"flat": schema.BoolAttribute{
 				Optional:    true,
