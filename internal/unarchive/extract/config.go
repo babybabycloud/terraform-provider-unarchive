@@ -3,25 +3,67 @@ package extract
 import (
 	"context"
 	"path/filepath"
+
+	"github.com/babybabycloud/terraform-provider-unarchive/internal/unarchive/common"
+	"github.com/babybabycloud/terraform-provider-unarchive/internal/unarchive/model"
 )
 
-// TestFunc is a function with a string parameter to check includes and excludes
-type TestFunc func(string) bool
+// ConfigFilter stores the expressions of include and exclude
+type ConfigFilter struct {
+	Includes common.Patterns
+	Excludes common.Patterns
+}
+
+// FormFilterModel constructs an instance of ConfigFilter using model.FilterModel
+func FromFilterModel(f model.FilterModel) ConfigFilter {
+	var filter ConfigFilter
+	if !f.Includes.IsNull() {
+		filter.Includes = common.ToPatterns(f.Includes)
+	}
+
+	if !f.Excludes.IsNull() {
+		filter.Excludes = common.ToPatterns(f.Excludes)
+	}
+	return filter
+}
+
+func (f ConfigFilter) isSkip(name string) bool {
+	return !f.Includes.Include(name) || f.Excludes.Exclude(name)
+}
 
 // Config is an internal form of unarchive data source model
 type Config struct {
 	Ctx     context.Context
 	Name    string
-	Include TestFunc
-	Exclude TestFunc
+	Filters []ConfigFilter
 	Outdir  string
 	IsFlat  bool
 	Type    string
 }
 
+// FromUnarchiveDataSourceModel creates a pointer refering to an instanc of Config
+func FromUnarchiveDataSourceModel(m model.UnarchiveDataSourceModel) *Config {
+	conf := new(Config)
+	conf.Name = m.FileName.ValueString()
+	conf.Outdir = m.DecideOutputDir()
+	conf.IsFlat = m.IsFlat()
+	conf.Type = m.Type.ValueString()
+
+	filters := make([]ConfigFilter, len(m.Filters))
+	for index, filter := range m.Filters {
+		filters[index] = FromFilterModel(filter)
+	}
+	conf.Filters = filters
+	return conf
+}
+
 func (c *Config) isSkip(name string) bool {
-	var isSkip bool
-	return isSkip || !c.Include(name) || c.Exclude(name)
+	for _, filter := range c.Filters {
+		if !filter.isSkip(name) {
+			return false
+		}
+	}
+	return len(c.Filters) != 0
 }
 
 func (c *Config) correctFileName(filename string) string {

@@ -23,4 +23,4 @@ provider "unarchive" {
 
 ## Usage
 
-Please refer to [Docs](https://registry.terraform.io/providers/hashicorp/archive/latest/docs) for more details.
+Please refer to [Docs](https://registry.terraform.io/providers/babybabycloud/unarchive/latest/docs) for more details.

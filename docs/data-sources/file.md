@@ -51,13 +51,21 @@ output "targz_output" {
 
 ### Optional
 
-- `excludes` (List of String) inclules specifies which file should not be extracted. It uses regular express to find the files. It is a list
+- `filters` (Attributes List) filters specifies what to be included and excluded (see [below for nested schema](#nestedatt--filters))
 - `flat` (Boolean) flat specifies if the directory should be ignored.
-- `includes` (List of String) inclules specifies which file should be extracted. It uses regular express to find the files. It is a list
 - `output` (String) output specifies where the extracted files to be put.
 
 ### Read-Only
 
 - `file_names` (List of String) file_names indicates whar files have been extracted.
+
+<a id="nestedatt--filters"></a>
+### Nested Schema for `filters`
+
+Optional:
+
+- `excludes` (List of String) inclules specifies which file should not be extracted. It uses regular express to find the files. It is a list
+- `includes` (List of String) inclules specifies which file should be extracted. It uses regular express to find the files. It is a list
+
 
 

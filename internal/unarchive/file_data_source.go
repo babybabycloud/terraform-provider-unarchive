@@ -42,15 +42,23 @@ func (d *unarchiveDataSource) Schema(_ context.Context, _ datasource.SchemaReque
 				Optional:    true,
 				Description: `output specifies where the extracted files to be put.`,
 			},
-			"includes": schema.ListAttribute{
-				ElementType: types.StringType,
-				Optional:    true,
-				Description: `inclules specifies which file should be extracted. It uses regular express to find the files. It is a list`,
-			},
-			"excludes": schema.ListAttribute{
-				ElementType: types.StringType,
-				Optional:    true,
-				Description: `inclules specifies which file should not be extracted. It uses regular express to find the files. It is a list`,
+			"filters": schema.ListNestedAttribute{
+				Description: `filters specifies what to be included and excluded`,
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						"includes": schema.ListAttribute{
+							ElementType: types.StringType,
+							Optional:    true,
+							Description: `inclules specifies which file should be extracted. It uses regular express to find the files. It is a list`,
+						},
+						"excludes": schema.ListAttribute{
+							ElementType: types.StringType,
+							Optional:    true,
+							Description: `inclules specifies which file should not be extracted. It uses regular express to find the files. It is a list`,
+						},
+					},
+				},
+				Optional: true,
 			},
 			"flat": schema.BoolAttribute{
 				Optional:    true,
@@ -84,15 +92,9 @@ func (d *unarchiveDataSource) Read(ctx context.Context, req datasource.ReadReque
 		return
 	}
 
-	conf := &extract.Config{
-		Ctx:     ctx,
-		Name:    model.FileName.ValueString(),
-		Include: model.IncludePatterns(),
-		Exclude: model.ExcludePatterns(),
-		Outdir:  model.DecideOutputDir(),
-		IsFlat:  model.IsFlat(),
-		Type:    model.Type.ValueString(),
-	}
+	conf := extract.FromUnarchiveDataSourceModel(model)
+	conf.Ctx = ctx
+
 	info := extract.Extract(conf)
 
 	if info.Err != nil {
