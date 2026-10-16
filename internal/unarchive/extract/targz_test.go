@@ -22,7 +22,7 @@ func TestTargzGenerate(t *testing.T) {
 	filenames := h.generate(conf, func(i *item) string {
 		return i.name
 	})
-	defer os.Remove(name)
+	defer func() { _ = os.Remove(name) }()
 
 	assert.NotEmpty(t, filenames)
 }
@@ -33,14 +33,14 @@ func createTestTargzFile(t *testing.T, name string) {
 		t.Error(err)
 		t.FailNow()
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	content := []byte("Test content")
 
 	gw := gzip.NewWriter(file)
-	defer gw.Close()
+	defer func() { _ = gw.Close() }()
 	writter := tar.NewWriter(gw)
-	defer writter.Close()
+	defer func() { _ = writter.Close() }()
 
 	header := &tar.Header{
 		Name: "test/include.txt",
@@ -49,7 +49,11 @@ func createTestTargzFile(t *testing.T, name string) {
 	}
 	_ = writter.WriteHeader(header)
 	_, _ = writter.Write(content)
-	writter.Flush()
+	err = writter.Flush()
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
 
 	header = &tar.Header{
 		Name: "test/exclude.txt",
@@ -58,5 +62,8 @@ func createTestTargzFile(t *testing.T, name string) {
 	}
 	_ = writter.WriteHeader(header)
 	_, _ = writter.Write(content)
-	writter.Flush()
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
 }

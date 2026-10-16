@@ -31,7 +31,7 @@ func (z *zipHandler) generate(conf *Config, f testAndCopy) []string {
 		filename := f(&item{
 			copyItem:  file,
 			name:      zipFile.Name,
-			isRegFile: zipFile.Method == zip.Deflate,
+			isRegFile: true,
 			mode:      int64(zipFile.Mode()),
 		})
 		if filename != "" {
@@ -42,5 +42,5 @@ func (z *zipHandler) generate(conf *Config, f testAndCopy) []string {
 }
 
 func (z *zipHandler) close() {
-	z.rc.Close()
+	_ = z.rc.Close()
 }

@@ -22,7 +22,7 @@ func TestTarGenerate(t *testing.T) {
 		return i.name
 	})
 
-	defer os.Remove(name)
+	defer func() { _ = os.Remove(name) }()
 
 	assert.NotEmpty(t, filenames)
 }
@@ -33,12 +33,12 @@ func createTestTarFile(t *testing.T, name string) {
 		t.Error(err)
 		t.FailNow()
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	content := []byte("Test content")
 
 	writter := tar.NewWriter(file)
-	defer writter.Close()
+	defer func() { _ = writter.Close() }()
 
 	header := &tar.Header{
 		Name: "test/include.txt",
@@ -47,7 +47,11 @@ func createTestTarFile(t *testing.T, name string) {
 	}
 	_ = writter.WriteHeader(header)
 	_, _ = writter.Write(content)
-	writter.Flush()
+	err = writter.Flush()
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
 
 	header = &tar.Header{
 		Name: "test/exclude.txt",
@@ -56,5 +60,9 @@ func createTestTarFile(t *testing.T, name string) {
 	}
 	_ = writter.WriteHeader(header)
 	_, _ = writter.Write(content)
-	writter.Flush()
+	err = writter.Flush()
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
 }

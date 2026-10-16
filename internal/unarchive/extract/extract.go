@@ -17,7 +17,8 @@ func copy(info *item) error {
 	if err != nil {
 		return err
 	}
-	defer w.Close()
+	// ignore close error
+	defer func() { _ = w.Close() }()
 
 	_, err = io.Copy(w, info.copyItem)
 	if err != nil {
@@ -75,7 +76,8 @@ func Extract(conf *Config) ExtractInfo {
 
 		// Close the CopyItem if it can be closed
 		if canClose, ok := itemInfo.copyItem.(io.Closer); ok {
-			canClose.Close()
+			// ignore close error
+			_ = canClose.Close()
 		}
 		return filename
 	})
