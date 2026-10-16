@@ -22,7 +22,7 @@ func TestZipGenerate(t *testing.T) {
 	filenames := z.generate(conf, func(i *item) string {
 		return i.name
 	})
-	defer os.Remove(name)
+	defer func() { _ = os.Remove(name) }()
 
 	assert.NotEmpty(t, filenames)
 
@@ -34,7 +34,7 @@ func createZipFile(t *testing.T, name string) {
 		t.Error(err)
 		t.FailNow()
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	content := []byte("Test Content")
 	writter := zip.NewWriter(file)
@@ -43,7 +43,7 @@ func createZipFile(t *testing.T, name string) {
 		t.Error(err)
 		t.FailNow()
 	}
-	defer writter.Close()
+	defer func() { _ = writter.Close() }()
 
 	_, err = w.Write(content)
 	if err != nil {
@@ -57,5 +57,9 @@ func createZipFile(t *testing.T, name string) {
 		t.FailNow()
 	}
 	_, _ = w.Write(content)
-	writter.Flush()
+	err = writter.Flush()
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
 }

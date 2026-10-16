@@ -24,7 +24,9 @@ func TestCopy(t *testing.T) {
 	}
 	err := copy(itemInfo)
 	assert.Nil(t, err)
-	defer os.Remove(name)
+	defer func() {
+		_ = os.Remove(name)
+	}()
 
 	result, err := os.ReadFile(name)
 	assert.Nil(t, err)
@@ -53,8 +55,8 @@ func TestExtract(t *testing.T) {
 	result := Extract(conf)
 	expectFileName := "/tmp/include.txt"
 	expect := []string{expectFileName}
-	defer os.Remove(tarName)
-	defer os.Remove(expectFileName)
+	defer func() { _ = os.Remove(tarName) }()
+	defer func() { _ = os.Remove(expectFileName) }()
 
 	assert.EqualValues(t, expect, result.FileNames)
 }

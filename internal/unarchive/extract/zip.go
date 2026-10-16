@@ -42,5 +42,5 @@ func (z *zipHandler) generate(conf *Config, f testAndCopy) []string {
 }
 
 func (z *zipHandler) close() {
-	z.rc.Close()
+	_ = z.rc.Close()
 }

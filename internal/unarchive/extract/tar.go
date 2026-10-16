@@ -53,6 +53,6 @@ func (t *tarHandler) generate(conf *Config, f testAndCopy) []string {
 
 func (t *tarHandler) close() {
 	for e := t.rc.Back(); e != nil; e = e.Prev() {
-		e.Value.(io.Closer).Close()
+		_ = e.Value.(io.Closer).Close()
 	}
 }
