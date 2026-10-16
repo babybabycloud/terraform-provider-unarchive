@@ -74,7 +74,7 @@ func (d *unarchiveDataSource) Schema(_ context.Context, _ datasource.SchemaReque
 			"file_names": schema.ListAttribute{
 				ElementType: types.StringType,
 				Computed:    true,
-				Description: `file_names indicates whar files have been extracted.`,
+				Description: `file_names indicates what files have been extracted.`,
 			},
 		},
 		Description: `This only supports **ZIP**, **TAR** and **TAR in GZIP** file now. It supports to use **regular expression** to control which file is **included** or **excluded**.`,

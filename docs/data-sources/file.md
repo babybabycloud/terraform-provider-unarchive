@@ -64,8 +64,8 @@ output "targz_output" {
 
 Optional:
 
-- `excludes` (List of String) inclules specifies which file should not be extracted. It uses regular express to find the files. It is a list
-- `includes` (List of String) inclules specifies which file should be extracted. It uses regular express to find the files. It is a list
+- `excludes` (List of String) inclules specifies which file should not be extracted. It uses regular expression to find the files. It is a list
+- `includes` (List of String) inclules specifies which file should be extracted. It uses regular expression to find the files. It is a list
 
 
 
